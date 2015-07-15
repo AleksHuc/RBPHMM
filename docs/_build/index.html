@@ -1,0 +1,1495 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>Welcome to iCLIPHMMProject’s documentation! &mdash; iCLIPHMMProject 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    './',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="_static/jquery.js"></script>
+    <script type="text/javascript" src="_static/underscore.js"></script>
+    <script type="text/javascript" src="_static/doctools.js"></script>
+    <link rel="top" title="iCLIPHMMProject 0.1.1 documentation" href="#" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="#">iCLIPHMMProject 0.1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <div class="section" id="welcome-to-icliphmmproject-s-documentation">
+<h1>Welcome to iCLIPHMMProject&#8217;s documentation!<a class="headerlink" href="#welcome-to-icliphmmproject-s-documentation" title="Permalink to this headline">¶</a></h1>
+<p>Contents:</p>
+<div class="toctree-wrapper compound">
+<ul class="simple">
+</ul>
+</div>
+<span class="target" id="module-core.hiddenmarkovmodel"></span><dl class="class">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel">
+<em class="property">class </em><tt class="descclassname">core.hiddenmarkovmodel.</tt><tt class="descname">HiddenMarkovModel</tt><big>(</big><em>emission_alphabet</em>, <em>state_alphabet</em>, <em>state_type</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class that represent hidden Markov model.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>emission_alphabet</strong> &#8211; List of strings that represent emission symbols.</li>
+<li><strong>state_alphabet</strong> &#8211; List of strings that represent state symbols.</li>
+<li><strong>state_type</strong> &#8211; Single string that represents the type of states.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+<dl class="docutils">
+<dt>Specification of an HMM:</dt>
+<dd><ol class="first last arabic">
+<li><p class="first">N, the number if states in the model. We denote the set of all possible states as S = {S_{1}, S_{2}, ... , S_{N}}, the state at time t as q_{t}.</p>
+</li>
+<li><dl class="first docutils">
+<dt>M, the number of distinct observation symbols per state, i.e., the discrete alphabet size of the output set, We denote the set of all possible output symbols as V = {v_{1}, v_{2}, ... , v_{m}},</dt>
+<dd><p class="first last">the output symbol at the time t is O_{t}. The sequence of observed symbols is denoted as O = O_{1} * O_{2} * ... * O_{T}.</p>
+</dd>
+</dl>
+</li>
+<li><p class="first">The state transition probability distribution A = {a_{ij}}, where a_{ij} = P[q_{t+1} = S_{j} | q_{t} = S_{i}], 1 &lt;= i, j &lt;= N.</p>
+</li>
+<li><p class="first">The observation symbol probability distribution in state j, B = {b_{j}(k)}, where b_{j}(k) = P[O_{t} = v_{k} | q_{t} = S_{j}], 1 &lt;= j &lt;= N, 1 &lt;= k &lt;= M.</p>
+</li>
+<li><p class="first">The initial state distributions Pi = {Pi_{i}}, where Pi_{i} = P[q_{1} = S_{i}], 1 &lt;= i &lt;= N.</p>
+</li>
+</ol>
+</dd>
+</dl>
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.backward_probability">
+<tt class="descname">backward_probability</tt><big>(</big><em>emission_matrix</em>, <em>transition_matrix</em>, <em>emission_sequence</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.backward_probability"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.backward_probability" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the backward matrix and backward probability for give sequence of emissions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>emission_matrix</strong> &#8211; Represents the current emission matrix of our HMM.</li>
+<li><strong>transition_matrix</strong> &#8211; Represents the current transition matrix of our HMM.</li>
+<li><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Backward matrix and backward probability.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<ol class="arabic">
+<li><dl class="first docutils">
+<dt>Initialization:</dt>
+<dd><p class="first last">Beta_{T}(i) = 1, 1 &lt;= i &lt;= N.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Induction:</dt>
+<dd><p class="first last">Beta_{t}(i) = SUM_{j=1}^{N} a_{ij} * b_{j}(O_{t+1} * Beta_{t+1}(j)), 1 &lt;= t &lt;= T - 1, 1 &lt;= j &lt;= N.</p>
+</dd>
+</dl>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.backward_probability_constant">
+<tt class="descname">backward_probability_constant</tt><big>(</big><em>emission_matrix</em>, <em>transition_matrix</em>, <em>emission_sequence</em>, <em>constant</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.backward_probability_constant"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.backward_probability_constant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the backward matrix and backward probability for give sequence of emissions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>emission_matrix</strong> &#8211; Represents the current emission matrix of our HMM.</li>
+<li><strong>transition_matrix</strong> &#8211; Represents the current transition matrix of our HMM.</li>
+<li><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</li>
+<li><strong>constant</strong> &#8211; Value with which we multiply values at each step to prevent underflow.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Backward matrix and backward probability.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<ol class="arabic">
+<li><dl class="first docutils">
+<dt>Initialization:</dt>
+<dd><p class="first last">Beta_{T}(i) = 1, 1 &lt;= i &lt;= N.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Induction:</dt>
+<dd><p class="first last">Beta_{t}(i) = SUM_{j=1}^{N} a_{ij} * b_{j}(O_{t+1} * Beta_{t+1}(j)), 1 &lt;= t &lt;= T - 1, 1 &lt;= j &lt;= N.</p>
+</dd>
+</dl>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.backward_probability_log">
+<tt class="descname">backward_probability_log</tt><big>(</big><em>emission_matrix</em>, <em>transition_matrix</em>, <em>emission_sequence</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.backward_probability_log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.backward_probability_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the backward matrix and backward probability for give sequence of emissions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>emission_matrix</strong> &#8211; Represents the current emission matrix of our HMM.</li>
+<li><strong>transition_matrix</strong> &#8211; Represents the current transition matrix of our HMM.</li>
+<li><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Backward matrix and backward probability.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<ol class="arabic">
+<li><dl class="first docutils">
+<dt>Initialization:</dt>
+<dd><p class="first last">Beta_{T}(i) = 1, 1 &lt;= i &lt;= N.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Induction:</dt>
+<dd><p class="first last">Beta_{t}(i) = SUM_{j=1}^{N} a_{ij} * b_{j}(O_{t+1} * Beta_{t+1}(j)), 1 &lt;= t &lt;= T - 1, 1 &lt;= j &lt;= N.</p>
+</dd>
+</dl>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.backward_probability_normalized">
+<tt class="descname">backward_probability_normalized</tt><big>(</big><em>emission_matrix</em>, <em>transition_matrix</em>, <em>emission_sequence</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.backward_probability_normalized"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.backward_probability_normalized" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the backward matrix and backward probability for give sequence of emissions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>emission_matrix</strong> &#8211; Represents the current emission matrix of our HMM.</li>
+<li><strong>transition_matrix</strong> &#8211; Represents the current transition matrix of our HMM.</li>
+<li><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Backward matrix and backward probability.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<ol class="arabic">
+<li><dl class="first docutils">
+<dt>Initialization:</dt>
+<dd><p class="first last">Beta_{T}(i) = 1, 1 &lt;= i &lt;= N.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Induction:</dt>
+<dd><p class="first last">Beta_{t}(i) = SUM_{j=1}^{N} a_{ij} * b_{j}(O_{t+1} * Beta_{t+1}(j)), 1 &lt;= t &lt;= T - 1, 1 &lt;= j &lt;= N.</p>
+</dd>
+</dl>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.backward_probability_scaled">
+<tt class="descname">backward_probability_scaled</tt><big>(</big><em>emission_matrix</em>, <em>transition_matrix</em>, <em>emission_sequence</em>, <em>scale_matrix</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.backward_probability_scaled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.backward_probability_scaled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the backward matrix and backward probability for give sequence of emissions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>emission_matrix</strong> &#8211; Represents the current emission matrix of our HMM.</li>
+<li><strong>transition_matrix</strong> &#8211; Represents the current transition matrix of our HMM.</li>
+<li><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</li>
+<li><strong>scale_matrix</strong> &#8211; Matrix of scales from forward algorithm.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Backward matrix and backward probability.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<ol class="arabic">
+<li><dl class="first docutils">
+<dt>Initialization:</dt>
+<dd><p class="first last">Beta_{T}(i) = 1, 1 &lt;= i &lt;= N.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Induction:</dt>
+<dd><p class="first last">Beta_{t}(i) = SUM_{j=1}^{N} a_{ij} * b_{j}(O_{t+1} * Beta_{t+1}(j)), 1 &lt;= t &lt;= T - 1, 1 &lt;= j &lt;= N.</p>
+</dd>
+</dl>
+</li>
+</ol>
+<dl class="docutils">
+<dt>Scaling:</dt>
+<dd><ol class="first last arabic">
+<li><dl class="first docutils">
+<dt>Initialization:</dt>
+<dd><p class="first last">Beta_{T}^{**}(i) = 1
+Beta_{T}^{^}(i) = c_{T} * Beta_{T}^{**}(i)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Induction:</dt>
+<dd><p class="first last">Beta_{t}^{**}(i) = SUM_{j=1}^{N} a_{ij} * b_{j}(O_{t+1} * Beta_{t+1}^{^}(j))
+Beta_{t}^{^}(i) = c_{t} * Beta_{t}^{**}(i)</p>
+</dd>
+</dl>
+</li>
+</ol>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.baum_welch_training">
+<tt class="descname">baum_welch_training</tt><big>(</big><em>sequences</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.baum_welch_training"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.baum_welch_training" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that trains current hidden Markov model with given sequences emissions using Baum-Welch algorithm</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sequences</strong> &#8211; List of string of emissions.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.create_state_matrix">
+<tt class="descname">create_state_matrix</tt><big>(</big><em>sequence</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.create_state_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.create_state_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that reorganizes state sequence in state matrix where each row represents each state and 1 in each column represents which state is active at current location in sequence.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sequence</strong> &#8211; Current sequence.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Matrix that represents state sequence.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.eexp">
+<em class="property">static </em><tt class="descname">eexp</tt><big>(</big><em>x</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.eexp"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.eexp" title="Permalink to this definition">¶</a></dt>
+<dd><p>The extended exponential function is the standard exponential function e^{x}, except that it is extended to handle log zero, and is defined as follows:</p>
+<ol class="arabic simple">
+<li>for a real number x: eexp(x) = e^{x}</li>
+<li>for x = LOGZERO: eexp(x) = 0</li>
+</ol>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> &#8211; Input value.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Exponential value of input value.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.eln">
+<em class="property">static </em><tt class="descname">eln</tt><big>(</big><em>x</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.eln"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.eln" title="Permalink to this definition">¶</a></dt>
+<dd><p>The extended logarithm is the standard logarithm provided, except that it is extended to handle inputs of zero, and is defined as follows:</p>
+<ol class="arabic simple">
+<li>for positive real numbers x: eln(x) = ln(x)</li>
+<li>for x = 0: eln(x) = LOGZERO</li>
+</ol>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>x</strong> &#8211; Input value.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Logarithmic value of input value.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.elndivision">
+<em class="property">static </em><tt class="descname">elndivision</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.elndivision"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.elndivision" title="Permalink to this definition">¶</a></dt>
+<dd><p>The extended logarithm product function returns the logarithm of the division of x and y, and is defined as follows:</p>
+<ol class="arabic simple">
+<li>for positive real y and y: elndivision(eln(x), eln(y)) = eln(x) - eln(y)</li>
+<li>for x = 0: elndivision(LOGZERO, eln(y)) = LOGZERO</li>
+<li>for y = 0: elndivision(eln(x), LOGZERO) = LOGZERO</li>
+</ol>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; First logarithmic input value.</li>
+<li><strong>y</strong> &#8211; Second logarithmic input value.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">The logarithmic product of input values.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.elnproduct">
+<em class="property">static </em><tt class="descname">elnproduct</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.elnproduct"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.elnproduct" title="Permalink to this definition">¶</a></dt>
+<dd><p>The extended logarithm product function returns the logarithm of the product of x and y, and is defined as follows:</p>
+<ol class="arabic simple">
+<li>for positive real y and y: elnproduct(eln(x), eln(y)) = eln(x) + eln(y)</li>
+<li>for x = 0: elnproduct(LOGZERO, eln(y)) = LOGZERO</li>
+<li>for y = 0: elnproduct(eln(x), LOGZERO) = LOGZERO</li>
+</ol>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; First logarithmic input value.</li>
+<li><strong>y</strong> &#8211; Second logarithmic input value.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">The logarithmic product of input values.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.elnsum">
+<tt class="descname">elnsum</tt><big>(</big><em>x</em>, <em>y</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.elnsum"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.elnsum" title="Permalink to this definition">¶</a></dt>
+<dd><p>The extended logarithm sum function computes the extended logarithm of the sum of x and y given as inputs the extended logarithm of x an y, and is defines as follows:</p>
+<ol class="arabic simple">
+<li>for positive real x and y: elnsum(eln(x), eln(y)) = eln(x + y)</li>
+<li>for x = 0: elnsum(LOGZERO, eln(y)) = eln(y)</li>
+<li>for y = 0: elnsum(eln(x), LOGZERO) = eln(x)</li>
+</ol>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>x</strong> &#8211; First logarithmic input value.</li>
+<li><strong>y</strong> &#8211; Second logarithmic input value.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">The logarithmic sum of input values.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.forward_probability">
+<tt class="descname">forward_probability</tt><big>(</big><em>emission_matrix</em>, <em>transition_matrix</em>, <em>emission_sequence</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.forward_probability"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.forward_probability" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the forward matrix and forward probability for give sequence of emissions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>emission_matrix</strong> &#8211; Represents the current emission matrix of our HMM.</li>
+<li><strong>transition_matrix</strong> &#8211; Represents the current transition matrix of our HMM.</li>
+<li><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Forward matrix and forward probability.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<ol class="arabic">
+<li><dl class="first docutils">
+<dt>Initialization:</dt>
+<dd><p class="first last">Alpha_{t}(i) = Pi_{i} * b_{i}(O_{1}), 1 &lt;= i &lt;= N.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Induction:</dt>
+<dd><p class="first last">Alpha_{t+1}(j) = [SUM_{i=1}^{N} Alpha_{t}(i) * a_{ij}] * b_{j}(O_{t+1}), 1 &lt;= t &lt;= T - 1, 1 &lt;= j &lt;= N.</p>
+</dd>
+</dl>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.forward_probability_constant">
+<tt class="descname">forward_probability_constant</tt><big>(</big><em>emission_matrix</em>, <em>transition_matrix</em>, <em>emission_sequence</em>, <em>constant</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.forward_probability_constant"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.forward_probability_constant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the forward matrix and forward probability for give sequence of emissions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>emission_matrix</strong> &#8211; Represents the current emission matrix of our HMM.</li>
+<li><strong>transition_matrix</strong> &#8211; Represents the current transition matrix of our HMM.</li>
+<li><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</li>
+<li><strong>constant</strong> &#8211; Value with which we multiply values at each step to prevent underflow.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Forward matrix and forward probability.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<ol class="arabic">
+<li><dl class="first docutils">
+<dt>Initialization:</dt>
+<dd><p class="first last">Alpha_{t}(i) = Pi_{i} * b_{i}(O_{1}), 1 &lt;= i &lt;= N.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Induction:</dt>
+<dd><p class="first last">Alpha_{t+1}(j) = [SUM_{i=1}^{N} Alpha_{t}(i) * a_{ij}] * b_{j}(O_{t+1}), 1 &lt;= t &lt;= T - 1, 1 &lt;= j &lt;= N.</p>
+</dd>
+</dl>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.forward_probability_log">
+<tt class="descname">forward_probability_log</tt><big>(</big><em>emission_matrix</em>, <em>transition_matrix</em>, <em>emission_sequence</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.forward_probability_log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.forward_probability_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the forward matrix and forward probability for give sequence of emissions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>emission_matrix</strong> &#8211; Represents the current emission matrix of our HMM.</li>
+<li><strong>transition_matrix</strong> &#8211; Represents the current transition matrix of our HMM.</li>
+<li><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Forward matrix and forward probability.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<ol class="arabic">
+<li><dl class="first docutils">
+<dt>Initialization:</dt>
+<dd><p class="first last">Alpha_{t}(i) = Pi_{i} * b_{i}(O_{1}), 1 &lt;= i &lt;= N.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Induction:</dt>
+<dd><p class="first last">Alpha_{t+1}(j) = [SUM_{i=1}^{N} Alpha_{t}(i) * a_{ij}] * b_{j}(O_{t+1}), 1 &lt;= t &lt;= T - 1, 1 &lt;= j &lt;= N.</p>
+</dd>
+</dl>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.forward_probability_normalized">
+<tt class="descname">forward_probability_normalized</tt><big>(</big><em>emission_matrix</em>, <em>transition_matrix</em>, <em>emission_sequence</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.forward_probability_normalized"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.forward_probability_normalized" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the forward matrix and forward probability for give sequence of emissions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>emission_matrix</strong> &#8211; Represents the current emission matrix of our HMM.</li>
+<li><strong>transition_matrix</strong> &#8211; Represents the current transition matrix of our HMM.</li>
+<li><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Forward matrix and forward probability.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<ol class="arabic">
+<li><dl class="first docutils">
+<dt>Initialization:</dt>
+<dd><p class="first last">Alpha_{t}(i) = Pi_{i} * b_{i}(O_{1}), 1 &lt;= i &lt;= N.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Induction:</dt>
+<dd><p class="first last">Alpha_{t+1}(j) = [SUM_{i=1}^{N} Alpha_{t}(i) * a_{ij}] * b_{j}(O_{t+1}), 1 &lt;= t &lt;= T - 1, 1 &lt;= j &lt;= N.</p>
+</dd>
+</dl>
+</li>
+</ol>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.forward_probability_scaled">
+<tt class="descname">forward_probability_scaled</tt><big>(</big><em>emission_matrix</em>, <em>transition_matrix</em>, <em>emission_sequence</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.forward_probability_scaled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.forward_probability_scaled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the scaled forward matrix and scaled forward probability for give sequence of emissions.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>emission_matrix</strong> &#8211; Represents the current emission matrix of our HMM.</li>
+<li><strong>transition_matrix</strong> &#8211; Represents the current transition matrix of our HMM.</li>
+<li><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Forward matrix, scale matrix and forward probability.</p>
+</td>
+</tr>
+</tbody>
+</table>
+<ol class="arabic">
+<li><dl class="first docutils">
+<dt>Initialization:</dt>
+<dd><p class="first last">Alpha_{1}(i) = Pi_{i} * b_{i}(O_{1}), 1 &lt;= i &lt;= N.</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Induction:</dt>
+<dd><p class="first last">Alpha_{t+1}(j) = [SUM_{i=1}^{N} Alpha_{t}(i) * a_{ij}] * b_{j}(O_{t+1}), 1 &lt;= t &lt;= T - 1, 1 &lt;= j &lt;= N.</p>
+</dd>
+</dl>
+</li>
+</ol>
+<dl class="docutils">
+<dt>Scaling:</dt>
+<dd><ol class="first last arabic">
+<li><dl class="first docutils">
+<dt>Initialization:</dt>
+<dd><p class="first last">Alpha_{1}^{**}(i) = Alpha_{1}(i)
+c_{1} = 1 / [SUM_{i=1}^{N} Alpha_{1}^{**}(i)]
+Alpha_{1}^{^}(i) = c_{1} * Alpha_{1}^{**}(i)</p>
+</dd>
+</dl>
+</li>
+<li><dl class="first docutils">
+<dt>Induction:</dt>
+<dd><p class="first last">Alpha_{1}^{**}(i) = [SUM_{j=1}^{N} Alpha_{t-1}^{^}(j) * a_{ji}] * b_{i}(O_{t})
+c_{t} = 1 / [SUM_{i=1}^{N} Alpha_{t}^{**}(i)]
+Alpha_{t}^{^}(i) = c_{t} * Alpha_{t}^{**}(i)</p>
+</dd>
+</dl>
+</li>
+</ol>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.get_emission_by_index">
+<tt class="descname">get_emission_by_index</tt><big>(</big><em>index</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.get_emission_by_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.get_emission_by_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that finds Emission index tuple in emission alphabet.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>index</strong> &#8211; Index of tuple.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Emission index tuple for given index.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.get_emission_by_name">
+<tt class="descname">get_emission_by_name</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.get_emission_by_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.get_emission_by_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that finds Emission index tuple in emission alphabet.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> &#8211; Name of Emission object.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Emission index tuple for given name.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.get_state_by_index">
+<tt class="descname">get_state_by_index</tt><big>(</big><em>index</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.get_state_by_index"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.get_state_by_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that finds State index tuple in state alphabet.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>index</strong> &#8211; Index of tuple.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">State index tuple for given index.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.get_state_by_name">
+<tt class="descname">get_state_by_name</tt><big>(</big><em>name</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.get_state_by_name"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.get_state_by_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that finds State index tuple in state alphabet.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>name</strong> &#8211; Name of State object.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">State index tuple for given name.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.make_emission_alphabet">
+<em class="property">static </em><tt class="descname">make_emission_alphabet</tt><big>(</big><em>emission_alphabet</em>, <em>state_type</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.make_emission_alphabet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.make_emission_alphabet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that wraps list of emission symbols in tuples of Emission object and emission index.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>emission_alphabet</strong> &#8211; List that represent emission symbols.</li>
+<li><strong>state_type</strong> &#8211; Single string that represents the type of states.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">List of tuples of Emission object and emission index.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.make_emission_matrix">
+<em class="property">static </em><tt class="descname">make_emission_matrix</tt><big>(</big><em>state_alphabet</em>, <em>emission_alphabet</em>, <em>initial_value</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.make_emission_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.make_emission_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that makes emission matrix for given state and emission alphabet.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>state_alphabet</strong> &#8211; List that represent state symbols.</li>
+<li><strong>emission_alphabet</strong> &#8211; List that represent emission symbols.</li>
+<li><strong>initial_value</strong> &#8211; Number that denotes the inital values in matrix.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Matrix with initial emission probabilities of all emissions for each state.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.make_state_alphabet">
+<em class="property">static </em><tt class="descname">make_state_alphabet</tt><big>(</big><em>state_alphabet</em>, <em>state_type</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.make_state_alphabet"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.make_state_alphabet" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that wraps list of state symbols in tuples of State object and state index.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>state_alphabet</strong> &#8211; List that represent state symbols.</li>
+<li><strong>state_type</strong> &#8211; Single string that represents the type of states.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">List of tuples of State object and state index.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.make_transition_matrix">
+<em class="property">static </em><tt class="descname">make_transition_matrix</tt><big>(</big><em>state_alphabet</em>, <em>initial_value</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.make_transition_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.make_transition_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that makes transition matrix for given state alphabet.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>state_alphabet</strong> &#8211; List that represent state symbols.</li>
+<li><strong>initial_value</strong> &#8211; Number that denotes the inital values in matrix.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Matrix with initial transition probabilities between all states.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.matrix_eln_conversion">
+<tt class="descname">matrix_eln_conversion</tt><big>(</big><em>current_matrix</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.matrix_eln_conversion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.matrix_eln_conversion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that converts probabilities of matrix to logarithmic values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>current_matrix</strong> &#8211; Given matrix.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Matrix with logarithmic values.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.matrix_log_conversion">
+<em class="property">static </em><tt class="descname">matrix_log_conversion</tt><big>(</big><em>current_matrix</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.matrix_log_conversion"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.matrix_log_conversion" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that converts probabilities of matrix to logarithmic values.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>current_matrix</strong> &#8211; Given matrix.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Matrix with logarithmic values.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.posterior_decoding">
+<tt class="descname">posterior_decoding</tt><big>(</big><em>emission_sequence</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.posterior_decoding"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.posterior_decoding" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the most probable path of states for give sequence of emissions with posterior decoding algorithm.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">String that represents the most probable state sequence and probability scores for each state at each emission.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.posterior_decoding_constant">
+<tt class="descname">posterior_decoding_constant</tt><big>(</big><em>emission_sequence</em>, <em>constant</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.posterior_decoding_constant"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.posterior_decoding_constant" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the most probable path of states for give sequence of emissions with posterior decoding algorithm that uses constant scaling.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</li>
+<li><strong>constant</strong> &#8211; Value with which we multiply values at each step to prevent underflow.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">String that represents the most probable state sequence and probability scores for each state at each emission.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.posterior_decoding_log">
+<tt class="descname">posterior_decoding_log</tt><big>(</big><em>emission_sequence</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.posterior_decoding_log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.posterior_decoding_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the most probable path of states for give sequence of emissions with posterior decoding algorithm that uses logarithmic values and operation.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">String that represents the most probable state sequence and probability scores for each state at each emission.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.posterior_decoding_normalized">
+<tt class="descname">posterior_decoding_normalized</tt><big>(</big><em>emission_sequence</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.posterior_decoding_normalized"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.posterior_decoding_normalized" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the most probable path of states for give sequence of emissions with posterior decoding algorithm that uses normalization.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">String that represents the most probable state sequence and probability scores for each state at each emission.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.posterior_decoding_scaled">
+<tt class="descname">posterior_decoding_scaled</tt><big>(</big><em>emission_sequence</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.posterior_decoding_scaled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.posterior_decoding_scaled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the most probable path of states for give sequence of emissions with posterior decoding algorithm that uses scaling.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">String that represents the most probable state sequence and probability scores for each state at each emission.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.posterior_viterbi">
+<tt class="descname">posterior_viterbi</tt><big>(</big><em>emission_sequence</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.posterior_viterbi"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.posterior_viterbi" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the most probable path of states for give sequence of emissions with posterior viterbi decoding algorithm.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">String that represents the most probable state sequence and posterior viterbi probability.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.posterior_viterbi_log_scaled">
+<tt class="descname">posterior_viterbi_log_scaled</tt><big>(</big><em>emission_sequence</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.posterior_viterbi_log_scaled"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.posterior_viterbi_log_scaled" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the most probable path of states for give sequence of emissions with posterior viterbi decoding algorithm with logarithmic and scaled probabilities.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">String that represents the most probable state sequence and posterior viterbi probability.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.print_matrix">
+<em class="property">static </em><tt class="descname">print_matrix</tt><big>(</big><em>current_matrix</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.print_matrix"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.print_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that prints to console the given matrix.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>current_matrix</strong> &#8211; Given matrix.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.save_hmm_to_pkl">
+<tt class="descname">save_hmm_to_pkl</tt><big>(</big><em>file_name</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.save_hmm_to_pkl"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.save_hmm_to_pkl" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that saves current HMM to pickle file.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>file_name</strong> &#8211; Given file name to which we save current HMM.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.state_sequence_training">
+<tt class="descname">state_sequence_training</tt><big>(</big><em>sequences</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.state_sequence_training"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.state_sequence_training" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that trains current hidden Markov model with given sequences of states and emissions, for combining probabilities we use weighted sum, where weights are represented by sequence lengths.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sequences</strong> &#8211; List of string of states and string of emissions.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Array of transition and emission matrices for each sequence and all other sequence data.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.viterbi_decoding">
+<tt class="descname">viterbi_decoding</tt><big>(</big><em>emission_sequence</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.viterbi_decoding"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.viterbi_decoding" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the most probable path of states for give sequence of emissions with viterbi decoding algorithm.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">String that represents the most probable state sequence and viterbi probability.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.hiddenmarkovmodel.HiddenMarkovModel.viterbi_decoding_log">
+<tt class="descname">viterbi_decoding_log</tt><big>(</big><em>emission_sequence</em><big>)</big><a class="reference internal" href="_modules/core/hiddenmarkovmodel.html#HiddenMarkovModel.viterbi_decoding_log"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.hiddenmarkovmodel.HiddenMarkovModel.viterbi_decoding_log" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the most probable path of states for give sequence of emissions with viterbi decoding algorithm with logarithmic probabilities.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>emission_sequence</strong> &#8211; String that represents the given emission sequence.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">String that represents the most probable state sequence and viterbi probability.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-core.filemanager"></span><dl class="class">
+<dt id="core.filemanager.FileManager">
+<em class="property">class </em><tt class="descclassname">core.filemanager.</tt><tt class="descname">FileManager</tt><a class="reference internal" href="_modules/core/filemanager.html#FileManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.filemanager.FileManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class that represent file manager.</p>
+<dl class="staticmethod">
+<dt id="core.filemanager.FileManager.make_generic_sequences">
+<em class="property">static </em><tt class="descname">make_generic_sequences</tt><big>(</big><em>file_manager</em>, <em>order</em>, <em>annotations_list</em>, <em>header</em>, <em>list_of_experiments</em><big>)</big><a class="reference internal" href="_modules/core/filemanager.html#FileManager.make_generic_sequences"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.filemanager.FileManager.make_generic_sequences" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that generates generic sequences of iclip states and emissions from nucleotides and annotations.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>file_manager</strong> &#8211; Given file manager class.</li>
+<li><strong>order</strong> &#8211; Given order of positive states.</li>
+<li><strong>annotations_list</strong> &#8211; Given list of annotation to include in sequences.</li>
+<li><strong>header</strong> &#8211; Given header object.</li>
+<li><strong>list_of_experiments</strong> &#8211; Given list of experiments for which to make sequences.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.filemanager.FileManager.make_sequences">
+<em class="property">static </em><tt class="descname">make_sequences</tt><big>(</big><em>sequences</em>, <em>kmer_size</em>, <em>kmers</em>, <em>annotations_list</em><big>)</big><a class="reference internal" href="_modules/core/filemanager.html#FileManager.make_sequences"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.filemanager.FileManager.make_sequences" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that generates specific sequences from a general ones.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sequences</strong> &#8211; Given general sequences.</li>
+<li><strong>kmer_size</strong> &#8211; Given size of kmers.</li>
+<li><strong>kmers</strong> &#8211; List of kmers to use in emissions.</li>
+<li><strong>annotations_list</strong> &#8211; List of annotations which to use in emissions.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">New specific sequences and new state and emission alphabets.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.filemanager.FileManager.read_dna_string_from_to">
+<tt class="descname">read_dna_string_from_to</tt><big>(</big><em>start_location</em>, <em>stop_location</em>, <em>string_direction</em><big>)</big><a class="reference internal" href="_modules/core/filemanager.html#FileManager.read_dna_string_from_to"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.filemanager.FileManager.read_dna_string_from_to" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that returns the chosen substring of the whole nucleotide string.</p>
+<ul class="simple">
+<li>A - Adenine</li>
+<li>C - Cytosine</li>
+<li>G - Guanine</li>
+<li>T - Thymine</li>
+<li>N - Any of the nucleotides.</li>
+</ul>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>start_location</strong> &#8211; Index that represents the start of substring.</li>
+<li><strong>stop_location</strong> &#8211; Index that represents the end of substring.</li>
+<li><strong>string_direction</strong> &#8211; String (&#8216;+&#8217; or &#8216;-&#8216;) that sets the direction in which the nucleotides are read.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">The chosen substring of the whole nucleotide string.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.filemanager.FileManager.read_file_headers">
+<tt class="descname">read_file_headers</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/core/filemanager.html#FileManager.read_file_headers"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.filemanager.FileManager.read_file_headers" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that makes header file that aggregates all given data files for easier data access.</p>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.filemanager.FileManager.read_files">
+<tt class="descname">read_files</tt><big>(</big><em>files_path</em>, <em>files_starting_with</em><big>)</big><a class="reference internal" href="_modules/core/filemanager.html#FileManager.read_files"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.filemanager.FileManager.read_files" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that stores file names to class dictionary for given directory and starting characters.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>files_path</strong> &#8211; String that represents the logical path to directory of files.</li>
+<li><strong>files_starting_with</strong> &#8211; String that represents common starting characters of requested files.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.filemanager.FileManager.read_iclip_info">
+<tt class="descname">read_iclip_info</tt><big>(</big><big>)</big><a class="reference internal" href="_modules/core/filemanager.html#FileManager.read_iclip_info"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.filemanager.FileManager.read_iclip_info" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that reads iclip header file and make dictionary.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Returns:</th><td class="field-body">Dictionary of read iclip header file.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.filemanager.FileManager.reverse_complement">
+<tt class="descname">reverse_complement</tt><big>(</big><em>s</em><big>)</big><a class="reference internal" href="_modules/core/filemanager.html#FileManager.reverse_complement"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.filemanager.FileManager.reverse_complement" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that returns the reverse complement of a given DNA sequence.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>s</strong> &#8211; Input DNA sequence.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Reverse complement in the correct orientation.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+<span class="target" id="module-core.analyticsmanager"></span><dl class="class">
+<dt id="core.analyticsmanager.AnalyticsManager">
+<em class="property">class </em><tt class="descclassname">core.analyticsmanager.</tt><tt class="descname">AnalyticsManager</tt><a class="reference internal" href="_modules/core/analyticsmanager.html#AnalyticsManager"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.analyticsmanager.AnalyticsManager" title="Permalink to this definition">¶</a></dt>
+<dd><p>Class that represent analytics manager.</p>
+<dl class="method">
+<dt id="core.analyticsmanager.AnalyticsManager.calculate_the_percentage_of_variance_measure">
+<tt class="descname">calculate_the_percentage_of_variance_measure</tt><big>(</big><em>matrices</em>, <em>k_range</em>, <em>output_file</em><big>)</big><a class="reference internal" href="_modules/core/analyticsmanager.html#AnalyticsManager.calculate_the_percentage_of_variance_measure"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.analyticsmanager.AnalyticsManager.calculate_the_percentage_of_variance_measure" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates percentage of variance measure for different number of cluster for k-means clustering on given data and draws them on a graph.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>matrices</strong> &#8211; Given transition and emission matrices.</li>
+<li><strong>k_range</strong> &#8211; Given range of number of cluster to evaluate.</li>
+<li><strong>output_file</strong> &#8211; Given string for naming the output file.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.analyticsmanager.AnalyticsManager.check_for_emissions">
+<em class="property">static </em><tt class="descname">check_for_emissions</tt><big>(</big><em>emissions_alphabet_train</em>, <em>emissions_alphabet_test</em>, <em>extracted_variables</em>, <em>final_generated_test_sequences</em><big>)</big><a class="reference internal" href="_modules/core/analyticsmanager.html#AnalyticsManager.check_for_emissions"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.analyticsmanager.AnalyticsManager.check_for_emissions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that changes emissions that are only in test data to the generic emission or emission next to it.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>emissions_alphabet_train</strong> &#8211; List of emissions in training data.</li>
+<li><strong>emissions_alphabet_test</strong> &#8211; List of emissions in test data.</li>
+<li><strong>extracted_variables</strong> &#8211; Variables extracted for sequence and HMM building.</li>
+<li><strong>final_generated_test_sequences</strong> &#8211; List of test sequences to correct.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">List of corrected test sequences.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.analyticsmanager.AnalyticsManager.clustering_of_matrices">
+<tt class="descname">clustering_of_matrices</tt><big>(</big><em>matrices</em>, <em>output_file</em>, <em>number_of_clusters</em><big>)</big><a class="reference internal" href="_modules/core/analyticsmanager.html#AnalyticsManager.clustering_of_matrices"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.analyticsmanager.AnalyticsManager.clustering_of_matrices" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that clusters given matrices with k-means algorithm and for given number of clusters and represents the results in heat map.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>matrices</strong> &#8211; Given transition and emission matrices.</li>
+<li><strong>output_file</strong> &#8211; Given string for naming the output file.</li>
+<li><strong>number_of_clusters</strong> &#8211; Given number of cluster.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.analyticsmanager.AnalyticsManager.count_occurrences">
+<em class="property">static </em><tt class="descname">count_occurrences</tt><big>(</big><em>sequence</em>, <em>kmer_size</em>, <em>state_neighbourhoods</em>, <em>annotations_size</em><big>)</big><a class="reference internal" href="_modules/core/analyticsmanager.html#AnalyticsManager.count_occurrences"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.analyticsmanager.AnalyticsManager.count_occurrences" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method counts occurrences of nucleotides, kmers and annotations in neighbourhood for each state.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sequence</strong> &#8211; Given sequence of states and emissions.</li>
+<li><strong>kmer_size</strong> &#8211; Size of kmers.</li>
+<li><strong>state_neighbourhoods</strong> &#8211; Dictionary that represents neighbourhood size for each state.</li>
+<li><strong>annotations_size</strong> &#8211; Number of annotations in emissions.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">List of counts of nucleotides annotations and kmers for given states and neighbourhoods for given sequence.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.analyticsmanager.AnalyticsManager.create_vector">
+<em class="property">static </em><tt class="descname">create_vector</tt><big>(</big><em>sequence</em><big>)</big><a class="reference internal" href="_modules/core/analyticsmanager.html#AnalyticsManager.create_vector"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.analyticsmanager.AnalyticsManager.create_vector" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that creates single vector that represents the given sequence from it&#8217;s transition and emission matrix.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><strong>sequence</strong> &#8211; Given transition and emission matrix.</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body">Vector with probabilities.</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.analyticsmanager.AnalyticsManager.cross_validation_of_hmm">
+<em class="property">static </em><tt class="descname">cross_validation_of_hmm</tt><big>(</big><em>train_sequences</em>, <em>test_sequences</em>, <em>states_alphabet</em>, <em>emissions_alphabet</em>, <em>hmm_type</em>, <em>file_name</em>, <em>dump</em><big>)</big><a class="reference internal" href="_modules/core/analyticsmanager.html#AnalyticsManager.cross_validation_of_hmm"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.analyticsmanager.AnalyticsManager.cross_validation_of_hmm" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that builds HMM from train sequences and cross validates it on test sequences.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>train_sequences</strong> &#8211; List of train sequences.</li>
+<li><strong>test_sequences</strong> &#8211; List of test sequences.</li>
+<li><strong>states_alphabet</strong> &#8211; List of state names for HMM.</li>
+<li><strong>emissions_alphabet</strong> &#8211; List of emissions names for HMM.</li>
+<li><strong>hmm_type</strong> &#8211; String that determines the type of HMM.</li>
+<li><strong>file_name</strong> &#8211; Name of the output files.</li>
+<li><strong>dump</strong> &#8211; Logical switch for writing results to file.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">List of ROC values for visualization and singe AUC value for each state.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.analyticsmanager.AnalyticsManager.cross_validation_of_hmm_with_extraction">
+<tt class="descname">cross_validation_of_hmm_with_extraction</tt><big>(</big><em>sequences</em>, <em>percent_of_train_sequences</em>, <em>percent_of_inner_train_sequences</em>, <em>number_of_repetitions</em>, <em>number_of_inner_repetitions</em>, <em>hmm_type</em>, <em>kmer_size</em>, <em>best_kmers</em>, <em>state_neighbourhoods</em>, <em>annotations_size</em>, <em>roc_ratio</em>, <em>kmer_probability_ratio</em>, <em>annotation_probability_ratio</em>, <em>minimal_distance_between_kmer_ratio</em>, <em>minimal_distance_between_annotation_ratio</em>, <em>dump</em>, <em>file_name</em><big>)</big><a class="reference internal" href="_modules/core/analyticsmanager.html#AnalyticsManager.cross_validation_of_hmm_with_extraction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.analyticsmanager.AnalyticsManager.cross_validation_of_hmm_with_extraction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that finds the most expressive variables from sequences and build the final HMM.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sequences</strong> &#8211; List of all sequences.</li>
+<li><strong>percent_of_train_sequences</strong> &#8211; Percent of train data at first division of sequences.</li>
+<li><strong>percent_of_inner_train_sequences</strong> &#8211; Percent of train data at second division of sequences.</li>
+<li><strong>number_of_repetitions</strong> &#8211; Number of repetitions of the whole process.</li>
+<li><strong>number_of_inner_repetitions</strong> &#8211; Number of repetitions of findind the best variables.</li>
+<li><strong>hmm_type</strong> &#8211; String that determines the type of HMM.</li>
+<li><strong>kmer_size</strong> &#8211; Number that denotes the size of kmers.</li>
+<li><strong>best_kmers</strong> &#8211; List of numbers which denotes how many best kmers are used in building HMM.</li>
+<li><strong>state_neighbourhoods</strong> &#8211; Dictionary which represents the size of neighbourhood for each state.</li>
+<li><strong>annotations_size</strong> &#8211; Number that denotes the size of annotations.</li>
+<li><strong>roc_ratio</strong> &#8211; Number that denotes minimal AUC of ROC for variable for use in final HMM building.</li>
+<li><strong>kmer_probability_ratio</strong> &#8211; Number that denotes minimal ratio of kmer for use in HMM building.</li>
+<li><strong>annotation_probability_ratio</strong> &#8211; Number that denotes minimal ratio of annotation for use in HMM building.</li>
+<li><strong>minimal_distance_between_kmer_ratio</strong> &#8211; Number that denotes minimal ratio difference for the same kmer between different states for use in HMM building.</li>
+<li><strong>minimal_distance_between_annotation_ratio</strong> &#8211; Number that denotes minimal ratio difference for the same annotation between different states for use in HMM building.</li>
+<li><strong>file_name</strong> &#8211; Name of the output files.</li>
+<li><strong>dump</strong> &#8211; Logical switch for writing results to file.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.analyticsmanager.AnalyticsManager.nucleotides_kmers_annotations_counts_probabilities">
+<em class="property">static </em><tt class="descname">nucleotides_kmers_annotations_counts_probabilities</tt><big>(</big><em>sequences</em>, <em>kmer_size</em>, <em>annotations_size</em>, <em>file_name</em>, <em>dump</em><big>)</big><a class="reference internal" href="_modules/core/analyticsmanager.html#AnalyticsManager.nucleotides_kmers_annotations_counts_probabilities"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.analyticsmanager.AnalyticsManager.nucleotides_kmers_annotations_counts_probabilities" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that counts the occurrences of nucleotides, kmers and annotations of given size and calculates their probabilities.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sequences</strong> &#8211; List of sequences.</li>
+<li><strong>kmer_size</strong> &#8211; Size of kmers.</li>
+<li><strong>annotations_size</strong> &#8211; Number of annotations in emissions.</li>
+<li><strong>file_name</strong> &#8211; Name of the output file.</li>
+<li><strong>dump</strong> &#8211; Logical switch for writing results to file.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">Dictionary of counts and probabilities of nucleotides, kmers and annotations.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.analyticsmanager.AnalyticsManager.probability_of_prediction">
+<em class="property">static </em><tt class="descname">probability_of_prediction</tt><big>(</big><em>sequence</em>, <em>y_score</em>, <em>file_manager</em>, <em>experiment</em>, <em>state_index</em><big>)</big><a class="reference internal" href="_modules/core/analyticsmanager.html#AnalyticsManager.probability_of_prediction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.analyticsmanager.AnalyticsManager.probability_of_prediction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that makes list of points(probability of crosslink, iclip intensity) for given sequence.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sequence</strong> &#8211; Given sequence.</li>
+<li><strong>y_score</strong> &#8211; Matrix of probabilities.</li>
+<li><strong>file_manager</strong> &#8211; Given file manager object.</li>
+<li><strong>experiment</strong> &#8211; Given ID of single experiment.</li>
+<li><strong>state_index</strong> &#8211; Given ID of wanted state inside the matrix of probabilities.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">List of points(probability of crosslink, iclip intensity).</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.analyticsmanager.AnalyticsManager.sequences_statistics">
+<tt class="descname">sequences_statistics</tt><big>(</big><em>sequences</em>, <em>kmer_size</em>, <em>state_neighbourhoods</em>, <em>annotations_size</em>, <em>file_name</em>, <em>dump</em><big>)</big><a class="reference internal" href="_modules/core/analyticsmanager.html#AnalyticsManager.sequences_statistics"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.analyticsmanager.AnalyticsManager.sequences_statistics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that calculates the probabilities of nucleotides, kmers and annotations for each specific state and its neighbourhood.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first simple">
+<li><strong>sequences</strong> &#8211; Given list of sequences.</li>
+<li><strong>kmer_size</strong> &#8211; Given size of kmers.</li>
+<li><strong>state_neighbourhoods</strong> &#8211; Dictionary that represent the neighbourhood size for each specific state.</li>
+<li><strong>annotations_size</strong> &#8211; Number of annotations in emissions.</li>
+<li><strong>file_name</strong> &#8211; Given file name for saving the statistics to disk.</li>
+<li><strong>dump</strong> &#8211; Logical switch for writing results to file.</li>
+</ul>
+</td>
+</tr>
+<tr class="field-even field"><th class="field-name">Returns:</th><td class="field-body"><p class="first last">List of probabilities of nucleotides annotations and kmers for given states and neighbourhoods for given list of sequences.</p>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="method">
+<dt id="core.analyticsmanager.AnalyticsManager.visualize_probability_of_prediction">
+<tt class="descname">visualize_probability_of_prediction</tt><big>(</big><em>file_manager</em>, <em>sequences</em>, <em>hmm</em>, <em>experiment</em>, <em>file_name</em>, <em>state_name</em><big>)</big><a class="reference internal" href="_modules/core/analyticsmanager.html#AnalyticsManager.visualize_probability_of_prediction"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.analyticsmanager.AnalyticsManager.visualize_probability_of_prediction" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that visualizes list of points(probability of crosslink, iclip intensity) for given list of sequences.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>file_manager</strong> &#8211; Given file manager object.</li>
+<li><strong>sequences</strong> &#8211; Given list of sequences.</li>
+<li><strong>hmm</strong> &#8211; Given HMM.</li>
+<li><strong>experiment</strong> &#8211; Given ID of single experiment.</li>
+<li><strong>file_name</strong> &#8211; Given name of output file.</li>
+<li><strong>state_name</strong> &#8211; Given name of state.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+<dl class="staticmethod">
+<dt id="core.analyticsmanager.AnalyticsManager.visualize_sequence">
+<em class="property">static </em><tt class="descname">visualize_sequence</tt><big>(</big><em>sequence</em>, <em>file_manager</em>, <em>hmm</em>, <em>iclip_experiment</em>, <em>visualization_type</em><big>)</big><a class="reference internal" href="_modules/core/analyticsmanager.html#AnalyticsManager.visualize_sequence"><span class="viewcode-link">[source]</span></a><a class="headerlink" href="#core.analyticsmanager.AnalyticsManager.visualize_sequence" title="Permalink to this definition">¶</a></dt>
+<dd><p>Method that visualizes single or ali iclip experiment values and annotations for single sequence.</p>
+<table class="docutils field-list" frame="void" rules="none">
+<col class="field-name" />
+<col class="field-body" />
+<tbody valign="top">
+<tr class="field-odd field"><th class="field-name">Parameters:</th><td class="field-body"><ul class="first last simple">
+<li><strong>sequence</strong> &#8211; Given sequence.</li>
+<li><strong>file_manager</strong> &#8211; Given file manager object.</li>
+<li><strong>hmm</strong> &#8211; Given HMM.</li>
+<li><strong>iclip_experiment</strong> &#8211; Given ID of single experiment.</li>
+<li><strong>visualization_type</strong> &#8211; String that decides the visualization of single or all iclip experiments values.</li>
+</ul>
+</td>
+</tr>
+</tbody>
+</table>
+</dd></dl>
+
+</dd></dl>
+
+</div>
+<div class="section" id="indices-and-tables">
+<h1>Indices and tables<a class="headerlink" href="#indices-and-tables" title="Permalink to this headline">¶</a></h1>
+<ul class="simple">
+<li><a class="reference internal" href="genindex.html"><em>Index</em></a></li>
+<li><a class="reference internal" href="py-modindex.html"><em>Module Index</em></a></li>
+<li><a class="reference internal" href="search.html"><em>Search Page</em></a></li>
+</ul>
+</div>
+
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+  <h3><a href="#">Table Of Contents</a></h3>
+  <ul>
+<li><a class="reference internal" href="#">Welcome to iCLIPHMMProject&#8217;s documentation!</a></li>
+<li><a class="reference internal" href="#indices-and-tables">Indices and tables</a></li>
+</ul>
+
+  <h3>This Page</h3>
+  <ul class="this-page-menu">
+    <li><a href="_sources/index.txt"
+           rel="nofollow">Show Source</a></li>
+  </ul>
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="#">iCLIPHMMProject 0.1.1 documentation</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Aleks Huc.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

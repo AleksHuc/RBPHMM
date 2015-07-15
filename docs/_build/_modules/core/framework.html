@@ -1,0 +1,348 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>core.framework &mdash; iCLIPHMMProject 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="iCLIPHMMProject 0.1.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">iCLIPHMMProject 0.1.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for core.framework</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">random</span>
+
+<span class="kn">from</span> <span class="nn">Bio</span> <span class="kn">import</span> <span class="n">Alphabet</span>
+
+<span class="kn">from</span> <span class="nn">Bio.Seq</span> <span class="kn">import</span> <span class="n">MutableSeq</span>
+<span class="kn">from</span> <span class="nn">Bio.Seq</span> <span class="kn">import</span> <span class="n">Seq</span>
+
+<span class="kn">from</span> <span class="nn">Bio.HMM</span> <span class="kn">import</span> <span class="n">MarkovModel</span>
+<span class="kn">from</span> <span class="nn">Bio.HMM</span> <span class="kn">import</span> <span class="n">Trainer</span>
+<span class="kn">from</span> <span class="nn">Bio.HMM</span> <span class="kn">import</span> <span class="n">DynamicProgramming</span>
+
+
+<span class="k">class</span> <span class="nc">Framework</span><span class="p">:</span>
+<div class="viewcode-block" id="Framework"><a class="viewcode-back" href="../../index.html#core.framework.Framework">[docs]</a>    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Framework class for single hidden Markov model evaluation.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">state_alphabet</span><span class="p">,</span> <span class="n">emission_alphabet</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Initialization of Framework and it&#39;s hidden Markov model.</span>
+<span class="sd">        :state_alphabet: Array that represents all possible state symbols.</span>
+<span class="sd">        :emission_alphabet: Array that represents all possible emission symbols.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Initialization of state alphabet.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state_alphabet</span> <span class="o">=</span> <span class="n">Alphabet</span><span class="o">.</span><span class="n">Alphabet</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">state_alphabet</span><span class="o">.</span><span class="n">letters</span> <span class="o">=</span> <span class="n">state_alphabet</span>
+
+        <span class="c"># Initialization of emission alphabet.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">emission_alphabet</span> <span class="o">=</span> <span class="n">Alphabet</span><span class="o">.</span><span class="n">Alphabet</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">emission_alphabet</span><span class="o">.</span><span class="n">letters</span> <span class="o">=</span> <span class="n">emission_alphabet</span>
+
+        <span class="c"># Initialization of hidden Markov model parameters.</span>
+        <span class="n">hmm_builder</span> <span class="o">=</span> <span class="n">MarkovModel</span><span class="o">.</span><span class="n">MarkovModelBuilder</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">state_alphabet</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">emission_alphabet</span><span class="p">)</span>
+        <span class="n">hmm_builder</span><span class="o">.</span><span class="n">allow_all_transitions</span><span class="p">()</span>
+        <span class="n">hmm_builder</span><span class="o">.</span><span class="n">set_equal_probabilities</span><span class="p">()</span>
+
+        <span class="c"># Creation of hidden Markov model.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">standard_hmm</span> <span class="o">=</span> <span class="n">hmm_builder</span><span class="o">.</span><span class="n">get_markov_model</span><span class="p">()</span>
+
+        <span class="c"># Initialization of hidden Markov model trainer.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span> <span class="o">=</span> <span class="n">Trainer</span><span class="o">.</span><span class="n">KnownStateTrainer</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">standard_hmm</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">train_hmm</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">emission_sequence</span><span class="p">,</span> <span class="n">state_sequence</span><span class="p">):</span>
+<div class="viewcode-block" id="Framework.train_hmm"><a class="viewcode-back" href="../../index.html#core.framework.Framework.train_hmm">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        This function does something.</span>
+
+<span class="sd">        :param name: The name to use.</span>
+<span class="sd">        :param state: Current state to be in.</span>
+<span class="sd">        :returns:  int -- the return code.</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">emission_sequence</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_sequence</span><span class="p">):</span>
+            <span class="c"># Initialize the training sequence from input data.</span>
+            <span class="n">know_training_sequence</span> <span class="o">=</span> <span class="n">Trainer</span><span class="o">.</span><span class="n">TrainingSequence</span><span class="p">(</span><span class="n">emission_sequence</span><span class="p">,</span> <span class="n">state_sequence</span><span class="p">)</span>
+
+            <span class="c"># Train the hidden Markov model.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">standard_hmm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">train</span><span class="p">([</span><span class="n">know_training_sequence</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;ERROR: The length of emission_sequence is not equal to state_sequence!&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">train_hmm_batch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">emission_sequences</span><span class="p">,</span> <span class="n">state_sequences</span><span class="p">):</span></div>
+<div class="viewcode-block" id="Framework.train_hmm_batch"><a class="viewcode-back" href="../../index.html#core.framework.Framework.train_hmm_batch">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that train hidden Markov model on multiple sequences.</span>
+
+<span class="sd">        :param emission_sequences: Array of arrays that represent sequence of emission symbols.</span>
+<span class="sd">        :param state_sequences: Array of arrays that represent sequence of state symbols.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Check for equal length of emission_sequences and state_sequences.</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">emission_sequences</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_sequences</span><span class="p">):</span>
+
+            <span class="c"># Initialize array of training sequences and append training sequences generated from input data.</span>
+            <span class="n">know_training_sequences</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">emission_sequences</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">emission_sequences</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">state_sequences</span><span class="p">[</span><span class="n">i</span><span class="p">]):</span>
+                    <span class="n">know_training_sequences</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">Trainer</span><span class="o">.</span><span class="n">TrainingSequence</span><span class="p">(</span><span class="n">emission_sequences</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">state_sequences</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">print</span><span class="p">(</span><span class="s">&quot;ERROR: The length of emission_sequence is not equal to state_sequence!&quot;</span><span class="p">)</span>
+
+            <span class="c"># Train the hidden Markov model.</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">standard_hmm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">trainer</span><span class="o">.</span><span class="n">train</span><span class="p">(</span><span class="n">know_training_sequences</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span><span class="p">(</span><span class="s">&quot;ERROR: The length of emission_sequences is not equal to state_sequences!&quot;</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">viterbi_prediction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">emission_sequence</span><span class="p">):</span></div>
+<div class="viewcode-block" id="Framework.viterbi_prediction"><a class="viewcode-back" href="../../index.html#core.framework.Framework.viterbi_prediction">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that predicts the most probable state sequence for give emission sequence.</span>
+<span class="sd">        @emission_sequence - array that represents sequence of emission symbols.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Predict the most probable state sequence for input data.</span>
+        <span class="n">predicted_states</span><span class="p">,</span> <span class="n">sequence_probability</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">standard_hmm</span><span class="o">.</span><span class="n">viterbi</span><span class="p">(</span><span class="n">emission_sequence</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_alphabet</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">predicted_states</span>
+
+    <span class="k">def</span> <span class="nf">posterior_prediction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">emission_sequence</span><span class="p">,</span> <span class="n">state_sequence</span><span class="p">):</span></div>
+<div class="viewcode-block" id="Framework.posterior_prediction"><a class="viewcode-back" href="../../index.html#core.framework.Framework.posterior_prediction">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that predicts the most probable state sequence for give emission sequence.</span>
+<span class="sd">        @emission_sequence - array that represents sequence of emission symbols.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">sequence</span> <span class="o">=</span> <span class="n">Trainer</span><span class="o">.</span><span class="n">TrainingSequence</span><span class="p">(</span><span class="n">Seq</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">emission_sequence</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">emission_alphabet</span><span class="p">),</span> <span class="n">Seq</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">state_sequence</span><span class="p">),</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_alphabet</span><span class="p">))</span>
+
+        <span class="c">#print(self.get_transition_probabilities())</span>
+        <span class="n">posterior</span> <span class="o">=</span> <span class="n">DynamicProgramming</span><span class="o">.</span><span class="n">ScaledDPAlgorithms</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">standard_hmm</span><span class="p">,</span> <span class="n">sequence</span><span class="p">)</span>
+        <span class="c">#forward_varables, forward_probability = posterior.forward_algorithm()</span>
+        <span class="c">#print(self.get_transition_probabilities())</span>
+        <span class="c">#posterior = DynamicProgramming.ScaledDPAlgorithms(self.standard_hmm, sequence)</span>
+        <span class="n">backward_varables</span><span class="p">,</span> <span class="n">backward_probability</span> <span class="o">=</span> <span class="n">posterior</span><span class="o">.</span><span class="n">backward_algorithm</span><span class="p">()</span>
+
+        <span class="c">#print(forward_varables, forward_probability)</span>
+        <span class="k">print</span><span class="p">(</span><span class="n">backward_varables</span><span class="p">,</span> <span class="n">backward_probability</span><span class="p">)</span>
+
+
+        <span class="k">return</span> <span class="s">&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">get_transition_probabilities</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div>
+<div class="viewcode-block" id="Framework.get_transition_probabilities"><a class="viewcode-back" href="../../index.html#core.framework.Framework.get_transition_probabilities">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that returns dictionary of transition probabilities between the states of hidden Markov model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">standard_hmm</span><span class="o">.</span><span class="n">transition_prob</span>
+
+    <span class="k">def</span> <span class="nf">get_emission_probabilities</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span></div>
+<div class="viewcode-block" id="Framework.get_emission_probabilities"><a class="viewcode-back" href="../../index.html#core.framework.Framework.get_emission_probabilities">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that returns dictionary of emission probabilities for each states of hidden Markov model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">standard_hmm</span><span class="o">.</span><span class="n">emission_prob</span>
+
+    <span class="k">def</span> <span class="nf">loaded_dice_roll</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">chance_num</span><span class="p">,</span> <span class="n">cur_state</span><span class="p">):</span></div>
+<div class="viewcode-block" id="Framework.loaded_dice_roll"><a class="viewcode-back" href="../../index.html#core.framework.Framework.loaded_dice_roll">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate a loaded dice roll based on the state and a random number</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">cur_state</span> <span class="o">==</span> <span class="s">&#39;F&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">chance_num</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="mi">6</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="s">&#39;1&#39;</span>
+            <span class="k">elif</span> <span class="n">chance_num</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="mi">6</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="s">&#39;2&#39;</span>
+            <span class="k">elif</span> <span class="n">chance_num</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="mi">6</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="s">&#39;3&#39;</span>
+            <span class="k">elif</span> <span class="n">chance_num</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="mi">6</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="s">&#39;4&#39;</span>
+            <span class="k">elif</span> <span class="n">chance_num</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="mi">6</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="s">&#39;5&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s">&#39;6&#39;</span>
+        <span class="k">elif</span> <span class="n">cur_state</span> <span class="o">==</span> <span class="s">&#39;L&#39;</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">chance_num</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="mi">10</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="s">&#39;1&#39;</span>
+            <span class="k">elif</span> <span class="n">chance_num</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="mi">10</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="s">&#39;2&#39;</span>
+            <span class="k">elif</span> <span class="n">chance_num</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="mi">10</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="s">&#39;3&#39;</span>
+            <span class="k">elif</span> <span class="n">chance_num</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="mi">10</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="s">&#39;4&#39;</span>
+            <span class="k">elif</span> <span class="n">chance_num</span> <span class="o">&lt;=</span> <span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="mi">10</span><span class="p">)):</span>
+                <span class="k">return</span> <span class="s">&#39;5&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">return</span> <span class="s">&#39;6&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s">&quot;Unexpected cur_state </span><span class="si">%s</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">cur_state</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">generate_rolls</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">num_rolls</span><span class="p">):</span></div>
+<div class="viewcode-block" id="Framework.generate_rolls"><a class="viewcode-back" href="../../index.html#core.framework.Framework.generate_rolls">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Generate a bunch of rolls corresponding to the casino probabilities.</span>
+<span class="sd">        Returns:</span>
+<span class="sd">        o The generate roll sequence</span>
+<span class="sd">        o The state sequence that generated the roll.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Start off in the fair state.</span>
+        <span class="n">cur_state</span> <span class="o">=</span> <span class="s">&#39;F&#39;</span>
+        <span class="n">roll_seq</span> <span class="o">=</span> <span class="n">MutableSeq</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">emission_alphabet</span><span class="p">)</span>
+        <span class="n">state_seq</span> <span class="o">=</span> <span class="n">MutableSeq</span><span class="p">(</span><span class="s">&#39;&#39;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_alphabet</span><span class="p">)</span>
+
+        <span class="c"># Generate the sequence.</span>
+        <span class="k">for</span> <span class="n">roll</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_rolls</span><span class="p">):</span>
+
+            <span class="n">state_seq</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">cur_state</span><span class="p">)</span>
+
+            <span class="c"># Generate a random number.</span>
+            <span class="n">chance_num</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+
+            <span class="c"># Add on a new roll to the sequence.</span>
+            <span class="n">new_roll</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">loaded_dice_roll</span><span class="p">(</span><span class="n">chance_num</span><span class="p">,</span> <span class="n">cur_state</span><span class="p">)</span>
+            <span class="n">roll_seq</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">new_roll</span><span class="p">)</span>
+
+            <span class="c"># Now give us a chance to switch to a new state.</span>
+            <span class="n">chance_num</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">random</span><span class="p">()</span>
+            <span class="k">if</span> <span class="n">cur_state</span> <span class="o">==</span> <span class="s">&#39;F&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">chance_num</span> <span class="o">&lt;=</span> <span class="o">.</span><span class="mo">05</span><span class="p">:</span>
+                    <span class="n">cur_state</span> <span class="o">=</span> <span class="s">&#39;L&#39;</span>
+            <span class="k">elif</span> <span class="n">cur_state</span> <span class="o">==</span> <span class="s">&#39;L&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">chance_num</span> <span class="o">&lt;=</span> <span class="o">.</span><span class="mi">1</span><span class="p">:</span>
+                    <span class="n">cur_state</span> <span class="o">=</span> <span class="s">&#39;F&#39;</span>
+
+        <span class="k">return</span> <span class="nb">list</span><span class="p">(</span><span class="n">roll_seq</span><span class="o">.</span><span class="n">tostring</span><span class="p">()),</span> <span class="nb">list</span><span class="p">(</span><span class="n">state_seq</span><span class="o">.</span><span class="n">tostring</span><span class="p">())</span>
+
+    <span class="k">def</span> <span class="nf">cross_validate</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">length_of_sequences</span><span class="p">,</span> <span class="n">number_of_sequences</span><span class="p">,</span> <span class="n">number_of_train_sequences</span><span class="p">):</span></div>
+<div class="viewcode-block" id="Framework.cross_validate"><a class="viewcode-back" href="../../index.html#core.framework.Framework.cross_validate">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that performs cross validation for random generated sequences.</span>
+<span class="sd">        @length_of_sequences - value that represents the length of each generated sequence.</span>
+<span class="sd">        @number_of_sequences - value that represents the number of generated sequences.</span>
+<span class="sd">        @number_of_train_sequences - value that represents the number of generated sequences that we take for training.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="c"># Generate random sequences.</span>
+        <span class="n">sequences</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">number_of_sequences</span><span class="p">):</span>
+            <span class="n">rolls</span><span class="p">,</span> <span class="n">states</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">generate_rolls</span><span class="p">(</span><span class="n">length_of_sequences</span><span class="p">)</span>
+            <span class="n">sequences</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">rolls</span><span class="p">,</span> <span class="n">states</span><span class="p">])</span>
+
+        <span class="c"># Generate train and test sequences.</span>
+        <span class="n">train_sequences</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="n">sequences</span><span class="p">,</span> <span class="n">number_of_train_sequences</span><span class="p">)</span>
+        <span class="n">test_sequences</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">sequences</span> <span class="k">if</span> <span class="n">p</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">train_sequences</span><span class="p">]</span>
+
+        <span class="c"># Train hidden Markov model on train sequences.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">train_hmm_batch</span><span class="p">([</span><span class="n">p</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">train_sequences</span><span class="p">],</span> <span class="p">[</span><span class="n">p</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">train_sequences</span><span class="p">])</span>
+
+        <span class="c"># Predict state sequences for test sequences and calculate difference to ground truth to calculate accuracy.</span>
+        <span class="n">accuracies</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">test_sequence</span> <span class="ow">in</span> <span class="n">test_sequences</span><span class="p">:</span>
+            <span class="n">predicted_states</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">viterbi_prediction</span><span class="p">(</span><span class="n">test_sequence</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span>
+
+            <span class="n">different</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">predicted_states</span><span class="p">)):</span>
+                <span class="k">if</span> <span class="n">predicted_states</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">!=</span> <span class="n">test_sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]:</span>
+                    <span class="n">different</span> <span class="o">+=</span> <span class="mi">1</span>
+
+            <span class="n">accuracy</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="nb">float</span><span class="p">(</span><span class="n">different</span><span class="p">)</span> <span class="o">/</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_sequence</span><span class="p">[</span><span class="mi">0</span><span class="p">]))</span> <span class="o">*</span> <span class="mi">100</span>
+            <span class="n">accuracies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">accuracy</span><span class="p">)</span>
+
+        <span class="n">average_accuracy</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">accuracies</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">accuracies</span><span class="p">)</span>
+        <span class="c">#print(&quot;Average accuracy of give evaluation is: %.2f%%&quot; % average_accuracy)</span>
+        <span class="k">return</span> <span class="n">average_accuracy</span>
+
+    <span class="k">def</span> <span class="nf">cross_validate_multiple</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">length_of_sequences</span><span class="p">,</span> <span class="n">number_of_sequences</span><span class="p">,</span> <span class="n">number_of_train_sequences</span><span class="p">,</span> <span class="n">number_of_repetitions</span><span class="p">):</span></div>
+<div class="viewcode-block" id="Framework.cross_validate_multiple"><a class="viewcode-back" href="../../index.html#core.framework.Framework.cross_validate_multiple">[docs]</a>        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that performs multiple cross validation for random generated sequences.</span>
+<span class="sd">        @length_of_sequences - value that represents the length of each generated sequence.</span>
+<span class="sd">        @number_of_sequences - value that represents the number of generated sequences.</span>
+<span class="sd">        @number_of_train_sequences - value that represents the number of generated sequences that we take for training.</span>
+<span class="sd">        @number_of_repetitions -  value that represents the repetition of single cross validation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">accuracies</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">number_of_repetitions</span><span class="p">):</span>
+            <span class="n">current_accuracy</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cross_validate</span><span class="p">(</span><span class="n">length_of_sequences</span><span class="p">,</span> <span class="n">number_of_sequences</span><span class="p">,</span> <span class="n">number_of_train_sequences</span><span class="p">)</span>
+            <span class="n">accuracies</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">current_accuracy</span><span class="p">)</span>
+
+        <span class="n">average_accuracy</span> <span class="o">=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">accuracies</span><span class="p">)</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">accuracies</span><span class="p">)</span>
+        <span class="k">print</span><span class="p">(</span><span class="s">&quot;Average accuracy of give evaluation is: </span><span class="si">%.2f%%</span><span class="s">&quot;</span> <span class="o">%</span> <span class="n">average_accuracy</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">average_accuracy</span>
+</pre></div></div></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">iCLIPHMMProject 0.1.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Aleks Huc.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

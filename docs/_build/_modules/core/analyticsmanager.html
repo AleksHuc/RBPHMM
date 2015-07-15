@@ -1,0 +1,878 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>core.analyticsmanager &mdash; iCLIPHMMProject 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="iCLIPHMMProject 0.1.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">iCLIPHMMProject 0.1.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for core.analyticsmanager</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">matplotlib.pyplot</span> <span class="kn">as</span> <span class="nn">plt</span>
+<span class="kn">import</span> <span class="nn">scipy.cluster.vq</span> <span class="kn">as</span> <span class="nn">vq</span>
+<span class="kn">import</span> <span class="nn">scipy.stats</span> <span class="kn">as</span> <span class="nn">sps</span>
+<span class="kn">import</span> <span class="nn">sklearn.metrics</span> <span class="kn">as</span> <span class="nn">mt</span>
+<span class="kn">import</span> <span class="nn">numpy</span> <span class="kn">as</span> <span class="nn">np</span>
+<span class="kn">import</span> <span class="nn">collections</span> <span class="kn">as</span> <span class="nn">cs</span>
+<span class="kn">import</span> <span class="nn">random</span> <span class="kn">as</span> <span class="nn">rd</span>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">gzip</span>
+
+<span class="kn">from</span> <span class="nn">iCLIPHMM.core</span> <span class="kn">import</span> <span class="n">HiddenMarkovModel</span>
+<span class="kn">from</span> <span class="nn">iCLIPHMM.core</span> <span class="kn">import</span> <span class="n">FileManager</span>
+
+
+<div class="viewcode-block" id="AnalyticsManager"><a class="viewcode-back" href="../../index.html#core.analyticsmanager.AnalyticsManager">[docs]</a><span class="k">class</span> <span class="nc">AnalyticsManager</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class that represent analytics manager.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">id</span> <span class="o">=</span> <span class="mi">0</span>
+
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="AnalyticsManager.create_vector"><a class="viewcode-back" href="../../index.html#core.analyticsmanager.AnalyticsManager.create_vector">[docs]</a>    <span class="k">def</span> <span class="nf">create_vector</span><span class="p">(</span><span class="n">sequence</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that creates single vector that represents the given sequence from it&#39;s transition and emission matrix.</span>
+
+<span class="sd">        :param sequence: Given transition and emission matrix.</span>
+<span class="sd">        :returns: Vector with probabilities.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">vector</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="n">transition_matrix</span> <span class="o">=</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">transition_matrix</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">transition_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">vector</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">transition_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">])</span>
+
+        <span class="n">emission_matrix</span> <span class="o">=</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">emission_matrix</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">vector</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">emission_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">vector</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="AnalyticsManager.cross_validation_of_hmm_with_extraction"><a class="viewcode-back" href="../../index.html#core.analyticsmanager.AnalyticsManager.cross_validation_of_hmm_with_extraction">[docs]</a>    <span class="k">def</span> <span class="nf">cross_validation_of_hmm_with_extraction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequences</span><span class="p">,</span> <span class="n">percent_of_train_sequences</span><span class="p">,</span> <span class="n">percent_of_inner_train_sequences</span><span class="p">,</span> <span class="n">number_of_repetitions</span><span class="p">,</span> <span class="n">number_of_inner_repetitions</span><span class="p">,</span> <span class="n">hmm_type</span><span class="p">,</span> <span class="n">kmer_size</span><span class="p">,</span> <span class="n">best_kmers</span><span class="p">,</span> <span class="n">state_neighbourhoods</span><span class="p">,</span> <span class="n">annotations_size</span><span class="p">,</span> <span class="n">roc_ratio</span><span class="p">,</span> <span class="n">kmer_probability_ratio</span><span class="p">,</span> <span class="n">annotation_probability_ratio</span><span class="p">,</span> <span class="n">minimal_distance_between_kmer_ratio</span><span class="p">,</span> <span class="n">minimal_distance_between_annotation_ratio</span><span class="p">,</span> <span class="n">dump</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that finds the most expressive variables from sequences and build the final HMM.</span>
+
+<span class="sd">        :param sequences: List of all sequences.</span>
+<span class="sd">        :param percent_of_train_sequences: Percent of train data at first division of sequences.</span>
+<span class="sd">        :param percent_of_inner_train_sequences: Percent of train data at second division of sequences.</span>
+<span class="sd">        :param number_of_repetitions: Number of repetitions of the whole process.</span>
+<span class="sd">        :param number_of_inner_repetitions: Number of repetitions of findind the best variables.</span>
+<span class="sd">        :param hmm_type: String that determines the type of HMM.</span>
+<span class="sd">        :param kmer_size: Number that denotes the size of kmers.</span>
+<span class="sd">        :param best_kmers: List of numbers which denotes how many best kmers are used in building HMM.</span>
+<span class="sd">        :param state_neighbourhoods: Dictionary which represents the size of neighbourhood for each state.</span>
+<span class="sd">        :param annotations_size: Number that denotes the size of annotations.</span>
+<span class="sd">        :param roc_ratio: Number that denotes minimal AUC of ROC for variable for use in final HMM building.</span>
+<span class="sd">        :param kmer_probability_ratio: Number that denotes minimal ratio of kmer for use in HMM building.</span>
+<span class="sd">        :param annotation_probability_ratio: Number that denotes minimal ratio of annotation for use in HMM building.</span>
+<span class="sd">        :param minimal_distance_between_kmer_ratio: Number that denotes minimal ratio difference for the same kmer between different states for use in HMM building.</span>
+<span class="sd">        :param minimal_distance_between_annotation_ratio: Number that denotes minimal ratio difference for the same annotation between different states for use in HMM building.</span>
+<span class="sd">        :param file_name: Name of the output files.</span>
+<span class="sd">        :param dump: Logical switch for writing results to file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">number_of_train_sequences</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sequences</span><span class="p">)</span> <span class="o">*</span> <span class="n">percent_of_train_sequences</span> <span class="o">/</span> <span class="mi">100</span><span class="p">)</span>
+
+        <span class="n">fm</span> <span class="o">=</span> <span class="n">FileManager</span><span class="p">()</span>
+
+        <span class="k">print</span> <span class="s">&quot;Cross validation of HMM with extraction: &quot;</span><span class="p">,</span> <span class="n">file_name</span>
+
+        <span class="k">for</span> <span class="n">iteration</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">number_of_repetitions</span><span class="p">):</span>
+
+            <span class="k">print</span> <span class="s">&quot;Iteration: &quot;</span><span class="p">,</span> <span class="n">iteration</span>
+
+            <span class="c"># Split sequences between test and train sequences.</span>
+            <span class="n">train_ids</span> <span class="o">=</span> <span class="n">rd</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sequences</span><span class="p">)),</span> <span class="n">number_of_train_sequences</span><span class="p">)</span>
+            <span class="n">test_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sequences</span><span class="p">))</span> <span class="k">if</span> <span class="n">p</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">train_ids</span><span class="p">]</span>
+            <span class="n">train_sequences</span> <span class="o">=</span> <span class="p">[</span><span class="n">sequences</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">train_ids</span><span class="p">]</span>
+            <span class="n">test_sequences</span> <span class="o">=</span> <span class="p">[</span><span class="n">sequences</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">test_ids</span><span class="p">]</span>
+            <span class="n">number_of_inner_train_sequences</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">train_sequences</span><span class="p">)</span> <span class="o">*</span> <span class="n">percent_of_inner_train_sequences</span> <span class="o">/</span> <span class="mi">100</span><span class="p">)</span>
+
+            <span class="n">extracted_variables</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">inner_iteration</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">number_of_inner_repetitions</span><span class="p">):</span>
+
+                <span class="k">print</span> <span class="s">&quot;Inner iteration: &quot;</span><span class="p">,</span> <span class="n">iteration</span>
+
+                <span class="c"># Split train sequences between inner test and inner train sequences.</span>
+                <span class="n">inner_train_ids</span> <span class="o">=</span> <span class="n">rd</span><span class="o">.</span><span class="n">sample</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">train_sequences</span><span class="p">)),</span> <span class="n">number_of_inner_train_sequences</span><span class="p">)</span>
+                <span class="n">inner_test_ids</span> <span class="o">=</span> <span class="p">[</span><span class="n">p</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">train_sequences</span><span class="p">))</span> <span class="k">if</span> <span class="n">p</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">inner_train_ids</span><span class="p">]</span>
+                <span class="n">inner_train_sequences</span> <span class="o">=</span> <span class="p">[</span><span class="n">train_sequences</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">inner_train_ids</span><span class="p">]</span>
+                <span class="n">inner_test_sequences</span> <span class="o">=</span> <span class="p">[</span><span class="n">train_sequences</span><span class="p">[</span><span class="n">p</span><span class="p">]</span> <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="n">inner_test_ids</span><span class="p">]</span>
+
+                <span class="k">print</span> <span class="s">&quot;|--Counting nucleotides, kmers and annotations in inner train data and calculating probabilities:&quot;</span>
+                <span class="n">n_and_k_probabilities</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">nucleotides_kmers_annotations_counts_probabilities</span><span class="p">(</span><span class="n">inner_train_sequences</span><span class="p">,</span> <span class="n">kmer_size</span><span class="p">,</span> <span class="n">annotations_size</span><span class="p">,</span> <span class="s">&quot;inner_iteration_&quot;</span> <span class="o">+</span> <span class="n">file_name</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+
+                <span class="k">print</span> <span class="s">&quot;|--Counting nucleotides, kmers and annotations in inner train data for each state and its neighbourhood and calculating probabilities:&quot;</span>
+                <span class="n">statistics</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">sequences_statistics</span><span class="p">(</span><span class="n">inner_train_sequences</span><span class="p">,</span> <span class="n">kmer_size</span><span class="p">,</span> <span class="n">state_neighbourhoods</span><span class="p">,</span> <span class="n">annotations_size</span><span class="p">,</span> <span class="s">&quot;inner_iteration_&quot;</span> <span class="o">+</span> <span class="n">file_name</span><span class="p">,</span> <span class="bp">False</span><span class="p">)</span>
+
+                <span class="n">ratio</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">state_neighbourhoods</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">ratio</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;nucleotides&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s">&quot;kmers&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s">&quot;annotations&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">statistics</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">for</span> <span class="n">key2</span> <span class="ow">in</span> <span class="n">statistics</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="k">for</span> <span class="n">key3</span> <span class="ow">in</span> <span class="n">statistics</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                            <span class="k">if</span> <span class="n">key2</span> <span class="o">==</span> <span class="s">&quot;annotations&quot;</span><span class="p">:</span>
+                                <span class="n">ratio</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">][</span><span class="n">key3</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">statistics</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">][</span><span class="n">key3</span><span class="p">]</span> <span class="o">/</span> <span class="n">n_and_k_probabilities</span><span class="p">[</span><span class="s">&quot;probabilities&quot;</span><span class="p">][</span><span class="n">key2</span><span class="p">][</span><span class="n">key3</span><span class="p">][</span><span class="s">&quot;1&quot;</span><span class="p">])</span>
+                            <span class="k">else</span><span class="p">:</span>
+                                <span class="n">ratio</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">][</span><span class="n">key3</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">statistics</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">][</span><span class="n">key3</span><span class="p">]</span> <span class="o">/</span> <span class="n">n_and_k_probabilities</span><span class="p">[</span><span class="s">&quot;probabilities&quot;</span><span class="p">][</span><span class="n">key2</span><span class="p">][</span><span class="n">key3</span><span class="p">])</span>
+
+                <span class="k">print</span> <span class="s">&quot;|--Evaluating new sequences:&quot;</span>
+
+                <span class="n">the_chosen_kmers</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="n">the_chosen_annotations</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">ratio</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">for</span> <span class="n">key2</span> <span class="ow">in</span> <span class="n">ratio</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+
+                        <span class="k">if</span> <span class="n">key2</span> <span class="o">==</span> <span class="s">&quot;kmers&quot;</span><span class="p">:</span>
+
+                            <span class="k">print</span> <span class="s">&quot;|--|--Evaluating k-mers for state &quot;</span> <span class="o">+</span> <span class="n">key</span> <span class="o">+</span> <span class="s">&quot; : &quot;</span>
+
+                            <span class="n">max_value</span> <span class="o">=</span> <span class="mf">0.5</span>
+                            <span class="n">max_index</span> <span class="o">=</span> <span class="mi">0</span>
+                            <span class="n">sorted_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">ratio</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">]</span><span class="o">.</span><span class="n">items</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+
+                            <span class="k">if</span> <span class="n">dump</span><span class="p">:</span>
+                                <span class="n">width</span> <span class="o">=</span> <span class="mf">0.75</span>
+                                <span class="n">font_size</span> <span class="o">=</span> <span class="mi">8</span>
+                                <span class="n">n_kmers</span> <span class="o">=</span> <span class="mi">30</span>
+                                <span class="n">draw_sorted_list</span> <span class="o">=</span> <span class="n">sorted_list</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">n_kmers</span><span class="p">]</span>
+                                <span class="n">n_elements</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">draw_sorted_list</span><span class="p">)</span>
+                                <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_elements</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                                <span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="n">num</span> <span class="k">for</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">num</span><span class="p">)</span> <span class="ow">in</span> <span class="n">draw_sorted_list</span><span class="p">]</span>
+                                <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">num</span><span class="p">)</span> <span class="ow">in</span> <span class="n">draw_sorted_list</span><span class="p">]</span>
+
+                                <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+                                <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+                                <span class="n">plt</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+                                <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&#39;K-mer ratio (real probability) / (expected probability)&#39;</span><span class="p">)</span>
+                                <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&quot;Ratio&quot;</span><span class="p">)</span>
+                                <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&quot;K-mers&quot;</span><span class="p">)</span>
+                                <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">width</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">font_size</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">)</span>
+                                <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&quot;visualize_ratio_&quot;</span> <span class="o">+</span> <span class="n">file_name</span> <span class="o">+</span> <span class="s">&quot;_&quot;</span> <span class="o">+</span> <span class="n">key</span> <span class="o">+</span> <span class="s">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">n_kmers</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;.pdf&#39;</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s">&#39;tight&#39;</span><span class="p">)</span>
+                                <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+                            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">best_kmers</span><span class="p">:</span>
+                                <span class="n">chosen_kmers</span> <span class="o">=</span> <span class="n">sorted_list</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">i</span><span class="p">]</span>
+
+                                <span class="k">if</span> <span class="n">chosen_kmers</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">chosen_kmers</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">kmer_probability_ratio</span><span class="p">:</span>
+
+                                    <span class="k">print</span> <span class="s">&quot;|--|--|--Evaluating these k-mers: &quot;</span><span class="p">,</span> <span class="n">chosen_kmers</span>
+
+                                    <span class="n">generated_train_sequences</span><span class="p">,</span> <span class="n">emissions_alphabet_train</span><span class="p">,</span> <span class="n">states_alphabet_train</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">make_sequences</span><span class="p">(</span><span class="n">inner_train_sequences</span><span class="p">,</span> <span class="n">kmer_size</span><span class="p">,</span> <span class="p">[</span><span class="n">j</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">chosen_kmers</span><span class="p">],</span> <span class="p">[])</span>
+                                    <span class="n">generated_test_sequences</span><span class="p">,</span> <span class="n">emissions_alphabet_test</span><span class="p">,</span> <span class="n">states_alphabet_test</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">make_sequences</span><span class="p">(</span><span class="n">inner_test_sequences</span><span class="p">,</span> <span class="n">kmer_size</span><span class="p">,</span> <span class="p">[</span><span class="n">j</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">chosen_kmers</span><span class="p">],</span> <span class="p">[])</span>
+
+                                    <span class="n">generated_extracted_variables</span> <span class="o">=</span> <span class="p">[[</span><span class="n">j</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">chosen_kmers</span><span class="p">],</span> <span class="p">[]]</span>
+                                    <span class="n">generated_test_sequences</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_for_emissions</span><span class="p">(</span><span class="n">emissions_alphabet_train</span><span class="p">,</span> <span class="n">emissions_alphabet_test</span><span class="p">,</span> <span class="n">generated_extracted_variables</span><span class="p">,</span> <span class="n">generated_test_sequences</span><span class="p">)</span>
+
+                                    <span class="c">#if dump:</span>
+                                    <span class="c">#    with open(&#39;generated_sequences_&#39; + file_name + &quot;_&quot; + key + &quot;_kmers_&quot; + str(i) + &#39;.pkl&#39;, &#39;wb&#39;) as f:</span>
+                                    <span class="c">#        pickle.dump([generated_train_sequences, generated_test_sequences, states_alphabet_train, emissions_alphabet_train], f)</span>
+
+                                    <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">roc_auc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cross_validation_of_hmm</span><span class="p">(</span><span class="n">generated_train_sequences</span><span class="p">,</span> <span class="n">generated_test_sequences</span><span class="p">,</span> <span class="n">states_alphabet_train</span><span class="p">,</span> <span class="n">emissions_alphabet_train</span><span class="p">,</span> <span class="n">hmm_type</span><span class="p">,</span> <span class="n">file_name</span> <span class="o">+</span> <span class="s">&quot;_&quot;</span> <span class="o">+</span> <span class="n">key</span> <span class="o">+</span> <span class="s">&quot;_kmers_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">),</span> <span class="n">dump</span><span class="p">)</span>
+
+                                    <span class="k">print</span> <span class="s">&quot;|--|--|--|--ROC result: &quot;</span><span class="p">,</span> <span class="n">roc_auc</span><span class="p">,</span> <span class="n">roc_auc</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+                                    <span class="k">if</span> <span class="n">roc_auc</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">max_value</span><span class="p">:</span>
+                                        <span class="n">max_value</span> <span class="o">=</span> <span class="n">roc_auc</span>
+                                        <span class="n">max_index</span> <span class="o">=</span> <span class="n">i</span>
+
+                            <span class="k">if</span> <span class="n">max_value</span> <span class="o">&gt;</span> <span class="n">roc_ratio</span><span class="p">:</span>
+                                <span class="n">the_chosen_kmers</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">sorted_list</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">max_index</span><span class="p">])</span>
+
+                        <span class="k">elif</span> <span class="n">key2</span> <span class="o">==</span> <span class="s">&quot;annotations&quot;</span><span class="p">:</span>
+
+                            <span class="k">print</span> <span class="s">&quot;|--|--Evaluating annotations for state &quot;</span> <span class="o">+</span> <span class="n">key</span> <span class="o">+</span> <span class="s">&quot; : &quot;</span>
+
+                            <span class="k">if</span> <span class="n">dump</span><span class="p">:</span>
+                                <span class="n">width</span> <span class="o">=</span> <span class="mf">0.75</span>
+                                <span class="n">font_size</span> <span class="o">=</span> <span class="mi">8</span>
+
+                                <span class="n">draw_sorted_list</span> <span class="o">=</span> <span class="p">[]</span>
+                                <span class="k">for</span> <span class="n">key3</span> <span class="ow">in</span> <span class="n">ratio</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">]:</span>
+                                    <span class="n">draw_sorted_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="nb">int</span><span class="p">(</span><span class="n">key3</span><span class="p">),</span> <span class="n">ratio</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">][</span><span class="n">key3</span><span class="p">]))</span>
+
+                                <span class="n">draw_sorted_list</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">tup</span><span class="p">:</span> <span class="n">tup</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">reverse</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+                                <span class="n">n_elements</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">draw_sorted_list</span><span class="p">)</span>
+                                <span class="n">x</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_elements</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                                <span class="n">y</span> <span class="o">=</span> <span class="p">[</span><span class="n">num</span> <span class="k">for</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">num</span><span class="p">)</span> <span class="ow">in</span> <span class="n">draw_sorted_list</span><span class="p">]</span>
+                                <span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">s</span> <span class="k">for</span> <span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="n">num</span><span class="p">)</span> <span class="ow">in</span> <span class="n">draw_sorted_list</span><span class="p">]</span>
+
+                                <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+                                <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+                                <span class="n">plt</span><span class="o">.</span><span class="n">bar</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">width</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s">&#39;r&#39;</span><span class="p">)</span>
+                                <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&#39;Annotation ratio (real probability) / (expected probability)&#39;</span><span class="p">)</span>
+                                <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&quot;Ratio&quot;</span><span class="p">)</span>
+                                <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&quot;Annotations&quot;</span><span class="p">)</span>
+                                <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="n">width</span><span class="o">/</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">labels</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="n">font_size</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">)</span>
+                                <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&quot;visualize_ratio_&quot;</span> <span class="o">+</span> <span class="n">file_name</span> <span class="o">+</span> <span class="s">&quot;_&quot;</span> <span class="o">+</span> <span class="n">key</span> <span class="o">+</span> <span class="s">&#39;_annotations.pdf&#39;</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s">&#39;tight&#39;</span><span class="p">)</span>
+                                <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+                            <span class="k">for</span> <span class="n">key3</span> <span class="ow">in</span> <span class="n">ratio</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">]:</span>
+                                <span class="k">if</span> <span class="n">ratio</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">][</span><span class="n">key3</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">annotation_probability_ratio</span><span class="p">:</span>
+
+                                    <span class="k">print</span> <span class="s">&quot;|--|--|--Evaluating annotation: &quot;</span><span class="p">,</span> <span class="n">key3</span>
+
+                                    <span class="n">kmers</span> <span class="o">=</span> <span class="n">n_and_k_probabilities</span><span class="p">[</span><span class="s">&quot;probabilities&quot;</span><span class="p">][</span><span class="s">&quot;nucleotides&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                                    <span class="n">generated_train_sequences</span><span class="p">,</span> <span class="n">emissions_alphabet_train</span><span class="p">,</span> <span class="n">states_alphabet_train</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">make_sequences</span><span class="p">(</span><span class="n">inner_train_sequences</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">kmers</span><span class="p">,</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">key3</span><span class="p">)])</span>
+                                    <span class="n">generated_test_sequences</span><span class="p">,</span> <span class="n">emissions_alphabet_test</span><span class="p">,</span> <span class="n">states_alphabet_test</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">make_sequences</span><span class="p">(</span><span class="n">inner_test_sequences</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">kmers</span><span class="p">,</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">key3</span><span class="p">)])</span>
+
+                                    <span class="n">generated_extracted_variables</span> <span class="o">=</span> <span class="p">[</span><span class="n">kmers</span><span class="p">,</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">key3</span><span class="p">)]]</span>
+                                    <span class="n">generated_test_sequences</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_for_emissions</span><span class="p">(</span><span class="n">emissions_alphabet_train</span><span class="p">,</span> <span class="n">emissions_alphabet_test</span><span class="p">,</span> <span class="n">generated_extracted_variables</span><span class="p">,</span> <span class="n">generated_test_sequences</span><span class="p">)</span>
+
+                                    <span class="c">#if dump:</span>
+                                    <span class="c">#    with open(&#39;generated_sequences_&#39; + file_name + &quot;_&quot; + key + &quot;_annotations_&quot; + key3 + &#39;.pkl&#39;, &#39;wb&#39;) as f:</span>
+                                    <span class="c">#        pickle.dump([generated_train_sequences, generated_test_sequences, states_alphabet_train, emissions_alphabet_train], f)</span>
+
+                                    <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">roc_auc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cross_validation_of_hmm</span><span class="p">(</span><span class="n">generated_train_sequences</span><span class="p">,</span> <span class="n">generated_test_sequences</span><span class="p">,</span> <span class="n">states_alphabet_train</span><span class="p">,</span> <span class="n">emissions_alphabet_train</span><span class="p">,</span> <span class="n">hmm_type</span><span class="p">,</span> <span class="n">file_name</span> <span class="o">+</span> <span class="s">&quot;_&quot;</span> <span class="o">+</span> <span class="n">key</span> <span class="o">+</span> <span class="s">&quot;_annotations_&quot;</span> <span class="o">+</span> <span class="n">key3</span><span class="p">,</span> <span class="n">dump</span><span class="p">)</span>
+
+                                    <span class="k">print</span> <span class="s">&quot;|--|--|--|--ROC result: &quot;</span><span class="p">,</span> <span class="n">roc_auc</span><span class="p">,</span> <span class="n">roc_auc</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+                                    <span class="k">if</span> <span class="n">roc_auc</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">roc_ratio</span><span class="p">:</span>
+                                        <span class="n">the_chosen_annotations</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">key3</span><span class="p">,</span> <span class="n">ratio</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">][</span><span class="n">key3</span><span class="p">]))</span>
+
+                <span class="n">corrected_kmers</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">the_chosen_kmers</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+                    <span class="n">kmers</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">the_chosen_kmers</span><span class="p">]</span>
+                    <span class="n">multiple_kmers</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">kmers</span> <span class="k">if</span> <span class="n">kmers</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">])</span>
+                    <span class="n">singleton_kmers</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">kmers</span><span class="p">)</span> <span class="o">-</span> <span class="n">multiple_kmers</span>
+                    <span class="n">corrected_kmers</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">singleton_kmers</span><span class="p">))</span>
+
+                    <span class="k">for</span> <span class="n">kmer</span> <span class="ow">in</span> <span class="n">multiple_kmers</span><span class="p">:</span>
+
+                        <span class="n">ratios</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">the_chosen_kmers</span> <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">kmer</span><span class="p">]</span>
+
+                        <span class="n">distances</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ratios</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ratios</span><span class="p">)):</span>
+                                <span class="n">distances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">ratios</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">ratios</span><span class="p">[</span><span class="n">j</span><span class="p">]))</span>
+
+                        <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">minimal_distance_between_kmer_ratio</span><span class="p">:</span>
+                            <span class="n">corrected_kmers</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">kmer</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">corrected_kmers</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">n_and_k_probabilities</span><span class="p">[</span><span class="s">&quot;probabilities&quot;</span><span class="p">][</span><span class="s">&quot;nucleotides&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+
+                <span class="n">corrected_annotations</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">the_chosen_annotations</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+                    <span class="n">annotations</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">the_chosen_annotations</span><span class="p">]</span>
+                    <span class="n">multiple_annotations</span> <span class="o">=</span> <span class="nb">set</span><span class="p">([</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">annotations</span> <span class="k">if</span> <span class="n">annotations</span><span class="o">.</span><span class="n">count</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">])</span>
+                    <span class="n">singleton_annotations</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">annotations</span><span class="p">)</span> <span class="o">-</span> <span class="n">multiple_annotations</span>
+                    <span class="n">corrected_annotations</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="n">singleton_annotations</span><span class="p">))</span>
+
+                    <span class="k">for</span> <span class="n">annotation</span> <span class="ow">in</span> <span class="n">multiple_annotations</span><span class="p">:</span>
+
+                        <span class="n">ratios</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">the_chosen_annotations</span> <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">annotation</span><span class="p">]</span>
+
+                        <span class="n">distances</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">ratios</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">ratios</span><span class="p">)):</span>
+                                <span class="n">distances</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">abs</span><span class="p">(</span><span class="n">ratios</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">ratios</span><span class="p">[</span><span class="n">j</span><span class="p">]))</span>
+
+                        <span class="k">if</span> <span class="nb">max</span><span class="p">(</span><span class="n">distances</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">minimal_distance_between_annotation_ratio</span><span class="p">:</span>
+                            <span class="n">corrected_annotations</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">annotation</span><span class="p">)</span>
+
+                <span class="n">corrected_annotations</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">corrected_annotations</span><span class="p">]</span>
+
+                <span class="n">extracted_variables</span> <span class="o">=</span> <span class="p">[</span><span class="n">corrected_kmers</span><span class="p">,</span> <span class="n">corrected_annotations</span><span class="p">]</span>
+
+            <span class="k">print</span> <span class="s">&quot;|--|--Extracted variables: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">extracted_variables</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s">&quot;|--Evaluating final test sequences:&quot;</span>
+
+            <span class="n">final_generated_train_sequences</span><span class="p">,</span> <span class="n">emissions_alphabet_train</span><span class="p">,</span> <span class="n">states_alphabet_train</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">make_sequences</span><span class="p">(</span><span class="n">train_sequences</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">extracted_variables</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span> <span class="n">extracted_variables</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">extracted_variables</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">final_generated_test_sequences</span><span class="p">,</span> <span class="n">emissions_alphabet_test</span><span class="p">,</span> <span class="n">states_alphabet_test</span> <span class="o">=</span> <span class="n">fm</span><span class="o">.</span><span class="n">make_sequences</span><span class="p">(</span><span class="n">test_sequences</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">extracted_variables</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]),</span> <span class="n">extracted_variables</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">extracted_variables</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+
+            <span class="n">final_generated_test_sequences</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_for_emissions</span><span class="p">(</span><span class="n">emissions_alphabet_train</span><span class="p">,</span> <span class="n">emissions_alphabet_test</span><span class="p">,</span> <span class="n">extracted_variables</span><span class="p">,</span> <span class="n">final_generated_test_sequences</span><span class="p">)</span>
+
+            <span class="k">if</span> <span class="n">dump</span><span class="p">:</span>
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;final_generated_sequences_&#39;</span> <span class="o">+</span> <span class="n">file_name</span> <span class="o">+</span> <span class="s">&#39;.pkl&#39;</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">([</span><span class="n">final_generated_train_sequences</span><span class="p">,</span> <span class="n">final_generated_test_sequences</span><span class="p">,</span> <span class="n">states_alphabet_train</span><span class="p">,</span> <span class="n">emissions_alphabet_train</span><span class="p">],</span> <span class="n">f</span><span class="p">)</span>
+
+            <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">roc_auc</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">cross_validation_of_hmm</span><span class="p">(</span><span class="n">final_generated_train_sequences</span><span class="p">,</span> <span class="n">final_generated_test_sequences</span><span class="p">,</span> <span class="n">states_alphabet_train</span><span class="p">,</span> <span class="n">emissions_alphabet_train</span><span class="p">,</span> <span class="n">hmm_type</span><span class="p">,</span> <span class="n">file_name</span> <span class="o">+</span> <span class="s">&quot;_final&quot;</span><span class="p">,</span> <span class="n">dump</span><span class="p">)</span>
+            <span class="k">print</span> <span class="s">&quot;|--|--ROC result: &quot;</span><span class="p">,</span> <span class="n">roc_auc</span>
+</div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="AnalyticsManager.cross_validation_of_hmm"><a class="viewcode-back" href="../../index.html#core.analyticsmanager.AnalyticsManager.cross_validation_of_hmm">[docs]</a>    <span class="k">def</span> <span class="nf">cross_validation_of_hmm</span><span class="p">(</span><span class="n">train_sequences</span><span class="p">,</span> <span class="n">test_sequences</span><span class="p">,</span> <span class="n">states_alphabet</span><span class="p">,</span> <span class="n">emissions_alphabet</span><span class="p">,</span> <span class="n">hmm_type</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">dump</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that builds HMM from train sequences and cross validates it on test sequences.</span>
+
+<span class="sd">        :param train_sequences: List of train sequences.</span>
+<span class="sd">        :param test_sequences: List of test sequences.</span>
+<span class="sd">        :param states_alphabet: List of state names for HMM.</span>
+<span class="sd">        :param emissions_alphabet: List of emissions names for HMM.</span>
+<span class="sd">        :param hmm_type: String that determines the type of HMM.</span>
+<span class="sd">        :param file_name: Name of the output files.</span>
+<span class="sd">        :param dump: Logical switch for writing results to file.</span>
+<span class="sd">        :returns: List of ROC values for visualization and singe AUC value for each state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">hmm</span> <span class="o">=</span> <span class="n">HiddenMarkovModel</span><span class="p">(</span><span class="n">emissions_alphabet</span><span class="p">,</span> <span class="n">states_alphabet</span><span class="p">,</span> <span class="n">hmm_type</span><span class="p">)</span>
+        <span class="n">hmm</span><span class="o">.</span><span class="n">state_sequence_training</span><span class="p">(</span><span class="n">train_sequences</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">dump</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;hmm_&#39;</span> <span class="o">+</span> <span class="n">file_name</span> <span class="o">+</span> <span class="s">&#39;.pkl&#39;</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">hmm</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="n">tests</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([])</span>
+        <span class="c">#array_of_sequences = []</span>
+
+        <span class="k">for</span> <span class="n">sequence</span> <span class="ow">in</span> <span class="n">test_sequences</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+                <span class="n">predicted_sequence</span><span class="p">,</span> <span class="n">y_score</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">posterior_decoding_scaled</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="c">#predicted_sequence, y_score = hmm.posterior_decoding_normalized(sequence[1])</span>
+                <span class="c">#predicted_sequence, y_score = hmm.posterior_decoding_log(sequence[1])</span>
+                <span class="n">y_test</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">create_state_matrix</span><span class="p">(</span><span class="n">sequence</span><span class="p">)</span>
+
+                <span class="c">#array_of_sequences.append([sequence, y_score, y_test])</span>
+
+                <span class="k">if</span> <span class="n">scores</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">scores</span> <span class="o">=</span> <span class="n">y_score</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">scores</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">scores</span><span class="p">,</span> <span class="n">y_score</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+                <span class="k">if</span> <span class="n">tests</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">tests</span> <span class="o">=</span> <span class="n">y_test</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">tests</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">tests</span><span class="p">,</span> <span class="n">y_test</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+
+        <span class="c">#array_of_sequences = np.array(array_of_sequences)</span>
+        <span class="c">#if dump:</span>
+        <span class="c">#    with open(&#39;array_of_sequences_&#39; + file_name + &#39;.pkl&#39;, &#39;wb&#39;) as f:</span>
+        <span class="c">#        pickle.dump(array_of_sequences, f)</span>
+
+        <span class="n">n_classes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">states_alphabet</span><span class="p">)</span>
+        <span class="n">fpr</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">tpr</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="n">roc_auc</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">n_classes</span><span class="p">):</span>
+            <span class="n">fpr</span><span class="p">[</span><span class="n">hmm</span><span class="o">.</span><span class="n">get_state_by_index</span><span class="p">(</span><span class="n">i</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">],</span> <span class="n">tpr</span><span class="p">[</span><span class="n">hmm</span><span class="o">.</span><span class="n">get_state_by_index</span><span class="p">(</span><span class="n">i</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">],</span> <span class="n">_</span> <span class="o">=</span> <span class="n">mt</span><span class="o">.</span><span class="n">roc_curve</span><span class="p">(</span><span class="n">tests</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:],</span> <span class="n">scores</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:])</span>
+            <span class="n">roc_auc</span><span class="p">[</span><span class="n">hmm</span><span class="o">.</span><span class="n">get_state_by_index</span><span class="p">(</span><span class="n">i</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">]</span> <span class="o">=</span> <span class="n">mt</span><span class="o">.</span><span class="n">auc</span><span class="p">(</span><span class="n">fpr</span><span class="p">[</span><span class="n">hmm</span><span class="o">.</span><span class="n">get_state_by_index</span><span class="p">(</span><span class="n">i</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">],</span> <span class="n">tpr</span><span class="p">[</span><span class="n">hmm</span><span class="o">.</span><span class="n">get_state_by_index</span><span class="p">(</span><span class="n">i</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">dump</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_classes</span><span class="p">):</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">fpr</span><span class="p">[</span><span class="n">hmm</span><span class="o">.</span><span class="n">get_state_by_index</span><span class="p">(</span><span class="n">i</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">],</span> <span class="n">tpr</span><span class="p">[</span><span class="n">hmm</span><span class="o">.</span><span class="n">get_state_by_index</span><span class="p">(</span><span class="n">i</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">],</span> <span class="n">label</span><span class="o">=</span><span class="s">&#39;ROC curve of class {0} (area = {1:0.2f})&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">hmm</span><span class="o">.</span><span class="n">get_state_by_index</span><span class="p">(</span><span class="n">i</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">,</span> <span class="n">roc_auc</span><span class="p">[</span><span class="n">hmm</span><span class="o">.</span><span class="n">get_state_by_index</span><span class="p">(</span><span class="n">i</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">]))</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">],</span> <span class="s">&#39;k--&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">])</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.05</span><span class="p">])</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;False Positive Rate&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;True Positive Rate&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&#39;ROC curve and AUC for given HMM&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s">&quot;lower right&quot;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&quot;cross_validation_of_hmm_&quot;</span> <span class="o">+</span> <span class="n">file_name</span> <span class="o">+</span> <span class="s">&#39;.pdf&#39;</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s">&#39;tight&#39;</span><span class="p">)</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+
+        <span class="k">return</span> <span class="n">fpr</span><span class="p">,</span> <span class="n">tpr</span><span class="p">,</span> <span class="n">roc_auc</span>
+</div>
+<div class="viewcode-block" id="AnalyticsManager.calculate_the_percentage_of_variance_measure"><a class="viewcode-back" href="../../index.html#core.analyticsmanager.AnalyticsManager.calculate_the_percentage_of_variance_measure">[docs]</a>    <span class="k">def</span> <span class="nf">calculate_the_percentage_of_variance_measure</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matrices</span><span class="p">,</span> <span class="n">k_range</span><span class="p">,</span> <span class="n">output_file</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that calculates percentage of variance measure for different number of cluster for k-means clustering on given data and draws them on a graph.</span>
+
+<span class="sd">        :param matrices: Given transition and emission matrices.</span>
+<span class="sd">        :param k_range: Given range of number of cluster to evaluate.</span>
+<span class="sd">        :param output_file: Given string for naming the output file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">matrix</span> <span class="ow">in</span> <span class="n">matrices</span><span class="p">:</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">create_vector</span><span class="p">(</span><span class="n">matrix</span><span class="p">))</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="n">k_means</span> <span class="o">=</span> <span class="p">[</span><span class="n">vq</span><span class="o">.</span><span class="n">kmeans</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">k</span><span class="p">)</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="n">k_range</span><span class="p">]</span>
+        <span class="n">centroids</span> <span class="o">=</span> <span class="p">[</span><span class="n">cent</span> <span class="k">for</span> <span class="p">(</span><span class="n">cent</span><span class="p">,</span> <span class="n">var</span><span class="p">)</span> <span class="ow">in</span> <span class="n">k_means</span><span class="p">]</span>
+
+        <span class="n">variances</span> <span class="o">=</span> <span class="p">[</span><span class="n">vq</span><span class="o">.</span><span class="n">vq</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">cent</span><span class="p">)</span> <span class="k">for</span> <span class="n">cent</span> <span class="ow">in</span> <span class="n">centroids</span><span class="p">]</span>
+        <span class="n">average_variances</span> <span class="o">=</span> <span class="p">[</span><span class="nb">sum</span><span class="p">(</span><span class="n">dist</span><span class="p">)</span><span class="o">/</span><span class="n">data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="p">(</span><span class="n">cIdx</span><span class="p">,</span> <span class="n">dist</span><span class="p">)</span> <span class="ow">in</span> <span class="n">variances</span><span class="p">]</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">k_range</span><span class="p">,</span> <span class="n">average_variances</span><span class="p">,</span> <span class="s">&#39;o-&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="bp">True</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;Number of clusters&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;Average within-cluster sum of squares&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&#39;Elbow for KMeans clustering&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&quot;calculate_the_percentage_of_variance_measure_&quot;</span> <span class="o">+</span> <span class="n">output_file</span> <span class="o">+</span> <span class="s">&#39;.pdf&#39;</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s">&#39;tight&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="AnalyticsManager.clustering_of_matrices"><a class="viewcode-back" href="../../index.html#core.analyticsmanager.AnalyticsManager.clustering_of_matrices">[docs]</a>    <span class="k">def</span> <span class="nf">clustering_of_matrices</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">matrices</span><span class="p">,</span> <span class="n">output_file</span><span class="p">,</span> <span class="n">number_of_clusters</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that clusters given matrices with k-means algorithm and for given number of clusters and represents the results in heat map.</span>
+
+<span class="sd">        :param matrices: Given transition and emission matrices.</span>
+<span class="sd">        :param output_file: Given string for naming the output file.</span>
+<span class="sd">        :param number_of_clusters: Given number of cluster.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">matrix</span> <span class="ow">in</span> <span class="n">matrices</span><span class="p">:</span>
+            <span class="n">data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">create_vector</span><span class="p">(</span><span class="n">matrix</span><span class="p">))</span>
+        <span class="n">data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">data</span><span class="p">)</span>
+
+        <span class="n">k_means</span> <span class="o">=</span> <span class="n">vq</span><span class="o">.</span><span class="n">kmeans</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">number_of_clusters</span><span class="p">)</span>
+        <span class="n">clusters</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">vq</span><span class="o">.</span><span class="n">vq</span><span class="p">(</span><span class="n">data</span><span class="p">,</span> <span class="n">k_means</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="n">counts</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">Counter</span><span class="p">(</span><span class="n">clusters</span><span class="p">)</span>
+
+        <span class="n">header</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">transition_matrix</span> <span class="o">=</span> <span class="n">matrices</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">transition_matrix</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">transition_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">header</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;S: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; -&gt; &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+
+        <span class="n">emission_matrix</span> <span class="o">=</span> <span class="n">matrices</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">emission_matrix</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">emission_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">]:</span>
+                <span class="n">header</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="s">&quot;E: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot; -&gt; &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">j</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">name</span><span class="p">))</span>
+
+        <span class="n">print_header</span> <span class="o">=</span> <span class="s">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;{:&gt;20}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="s">&quot;|&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">header</span><span class="p">])</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">number_of_clusters</span><span class="p">):</span>
+            <span class="k">print</span> <span class="s">&quot;Cluster &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="k">print</span> <span class="n">print_header</span>
+            <span class="k">print</span> <span class="s">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&quot;-&quot;</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">print_header</span><span class="p">))])</span>
+            <span class="k">print</span> <span class="s">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s">&#39;{:&gt;20}&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;|&quot;</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">k_means</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]])</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">imshow</span><span class="p">(</span><span class="n">k_means</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">interpolation</span><span class="o">=</span><span class="s">&#39;none&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&quot;Cluster centroid&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">yticks</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">number_of_clusters</span><span class="p">),</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="o">+</span> <span class="s">&quot;: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">counts</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">number_of_clusters</span><span class="p">)])</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&quot;Transitions and emissions&quot;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xticks</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">data</span><span class="p">[</span><span class="mi">0</span><span class="p">])),</span> <span class="n">header</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">rotation</span><span class="o">=</span><span class="mi">90</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">bone</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">colorbar</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&quot;clustering_of_matrice_&quot;</span> <span class="o">+</span> <span class="n">output_file</span> <span class="o">+</span> <span class="s">&#39;.pdf&#39;</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s">&#39;tight&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+<div class="viewcode-block" id="AnalyticsManager.sequences_statistics"><a class="viewcode-back" href="../../index.html#core.analyticsmanager.AnalyticsManager.sequences_statistics">[docs]</a>    <span class="k">def</span> <span class="nf">sequences_statistics</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">sequences</span><span class="p">,</span> <span class="n">kmer_size</span><span class="p">,</span> <span class="n">state_neighbourhoods</span><span class="p">,</span> <span class="n">annotations_size</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">dump</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that calculates the probabilities of nucleotides, kmers and annotations for each specific state and its neighbourhood.</span>
+
+<span class="sd">        :param sequences: Given list of sequences.</span>
+<span class="sd">        :param kmer_size: Given size of kmers.</span>
+<span class="sd">        :param state_neighbourhoods: Dictionary that represent the neighbourhood size for each specific state.</span>
+<span class="sd">        :param annotations_size: Number of annotations in emissions.</span>
+<span class="sd">        :param file_name: Given file name for saving the statistics to disk.</span>
+<span class="sd">        :param dump: Logical switch for writing results to file.</span>
+<span class="sd">        :returns: List of probabilities of nucleotides annotations and kmers for given states and neighbourhoods for given list of sequences.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">counts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">state_neighbourhoods</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">counts</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;nucleotides&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s">&quot;kmers&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s">&quot;annotations&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+
+        <span class="n">lengths</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">state_neighbourhoods</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">lengths</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;nucleotides&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;kmers&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">,</span> <span class="s">&quot;annotations&quot;</span><span class="p">:</span> <span class="mi">0</span><span class="p">}</span>
+
+        <span class="k">for</span> <span class="n">sequence</span> <span class="ow">in</span> <span class="n">sequences</span><span class="p">:</span>
+            <span class="n">sequence_counts</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">count_occurrences</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="n">kmer_size</span><span class="p">,</span> <span class="n">state_neighbourhoods</span><span class="p">,</span> <span class="n">annotations_size</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">sequence_counts</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">key2</span> <span class="ow">in</span> <span class="n">sequence_counts</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">for</span> <span class="n">key3</span> <span class="ow">in</span> <span class="n">sequence_counts</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="k">if</span> <span class="n">key3</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                            <span class="n">counts</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">][</span><span class="n">key3</span><span class="p">]</span> <span class="o">+=</span> <span class="n">sequence_counts</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">][</span><span class="n">key3</span><span class="p">]</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">counts</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">][</span><span class="n">key3</span><span class="p">]</span> <span class="o">=</span> <span class="n">sequence_counts</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">][</span><span class="n">key3</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">state_neighbourhoods</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">key2</span> <span class="ow">in</span> <span class="n">lengths</span><span class="p">[</span><span class="n">key</span><span class="p">]:</span>
+                    <span class="k">if</span> <span class="n">key2</span> <span class="o">==</span> <span class="s">&quot;annotations&quot;</span><span class="p">:</span>
+                        <span class="n">lengths</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">sequence_counts</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s">&quot;nucleotides&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">lengths</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">]</span> <span class="o">+=</span> <span class="nb">sum</span><span class="p">(</span><span class="n">sequence_counts</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">]</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">counts</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">for</span> <span class="n">key2</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">for</span> <span class="n">key3</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">counts</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">][</span><span class="n">key3</span><span class="p">]</span> <span class="o">/=</span> <span class="nb">float</span><span class="p">(</span><span class="n">lengths</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">key2</span><span class="p">])</span>
+
+        <span class="k">if</span> <span class="n">dump</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">&quot;sequence_statistics_&quot;</span> <span class="o">+</span> <span class="n">file_name</span> <span class="o">+</span> <span class="s">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kmer_size</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;.pkl&#39;</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">counts</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">counts</span>
+</div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="AnalyticsManager.count_occurrences"><a class="viewcode-back" href="../../index.html#core.analyticsmanager.AnalyticsManager.count_occurrences">[docs]</a>    <span class="k">def</span> <span class="nf">count_occurrences</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="n">kmer_size</span><span class="p">,</span> <span class="n">state_neighbourhoods</span><span class="p">,</span> <span class="n">annotations_size</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method counts occurrences of nucleotides, kmers and annotations in neighbourhood for each state.</span>
+
+<span class="sd">        :param sequence: Given sequence of states and emissions.</span>
+<span class="sd">        :param kmer_size: Size of kmers.</span>
+<span class="sd">        :param state_neighbourhoods: Dictionary that represents neighbourhood size for each state.</span>
+<span class="sd">        :param annotations_size: Number of annotations in emissions.</span>
+<span class="sd">        :returns: List of counts of nucleotides annotations and kmers for given states and neighbourhoods for given sequence.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">counts</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">state_neighbourhoods</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">counts</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;nucleotides&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s">&quot;kmers&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s">&quot;annotations&quot;</span><span class="p">:</span> <span class="p">{}}</span>
+
+        <span class="n">blob_start</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">blob_end</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">blob_value</span> <span class="o">=</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">for</span> <span class="n">index</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+            <span class="k">if</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">index</span><span class="p">]</span> <span class="o">!=</span> <span class="n">blob_value</span> <span class="ow">or</span> <span class="n">index</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+
+                <span class="k">if</span> <span class="n">index</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">blob_end</span> <span class="o">=</span> <span class="n">index</span>
+
+                <span class="n">blob_start</span> <span class="o">=</span> <span class="n">blob_start</span> <span class="o">-</span> <span class="n">state_neighbourhoods</span><span class="p">[</span><span class="n">blob_value</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">blob_start</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="n">blob_start</span> <span class="o">=</span> <span class="mi">0</span>
+
+                <span class="n">blob_end</span> <span class="o">=</span> <span class="n">blob_end</span> <span class="o">+</span> <span class="n">state_neighbourhoods</span><span class="p">[</span><span class="n">blob_value</span><span class="p">]</span>
+                <span class="k">if</span> <span class="n">blob_end</span> <span class="o">&gt;</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="n">blob_end</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span>
+
+                <span class="n">neighbourhood</span> <span class="o">=</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">blob_start</span><span class="p">:</span> <span class="n">blob_end</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="n">nucleotides</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">Counter</span><span class="p">([</span><span class="n">j</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">neighbourhood</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">nucleotides</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">[</span><span class="n">blob_value</span><span class="p">][</span><span class="s">&quot;nucleotides&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">counts</span><span class="p">[</span><span class="n">blob_value</span><span class="p">][</span><span class="s">&quot;nucleotides&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">+=</span> <span class="n">nucleotides</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">counts</span><span class="p">[</span><span class="n">blob_value</span><span class="p">][</span><span class="s">&quot;nucleotides&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">nucleotides</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">annotations_size</span><span class="p">):</span>
+                    <span class="n">annotations</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">Counter</span><span class="p">([</span><span class="n">j</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">neighbourhood</span><span class="p">])</span>
+                    <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">[</span><span class="n">blob_value</span><span class="p">][</span><span class="s">&quot;annotations&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">counts</span><span class="p">[</span><span class="n">blob_value</span><span class="p">][</span><span class="s">&quot;annotations&quot;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">+=</span> <span class="n">annotations</span><span class="p">[</span><span class="s">&quot;1&quot;</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">counts</span><span class="p">[</span><span class="n">blob_value</span><span class="p">][</span><span class="s">&quot;annotations&quot;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="n">annotations</span><span class="p">[</span><span class="s">&quot;1&quot;</span><span class="p">]</span>
+
+                <span class="n">kmers</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">Counter</span><span class="p">([</span><span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">j</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">neighbourhood</span><span class="p">[</span><span class="n">i</span><span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="n">kmer_size</span><span class="p">]])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">neighbourhood</span><span class="p">)</span> <span class="o">-</span> <span class="n">kmer_size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)])</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">kmers</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">counts</span><span class="p">[</span><span class="n">blob_value</span><span class="p">][</span><span class="s">&quot;kmers&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">counts</span><span class="p">[</span><span class="n">blob_value</span><span class="p">][</span><span class="s">&quot;kmers&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">+=</span> <span class="n">kmers</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">counts</span><span class="p">[</span><span class="n">blob_value</span><span class="p">][</span><span class="s">&quot;kmers&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">kmers</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+                <span class="n">blob_value</span> <span class="o">=</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">index</span><span class="p">]</span>
+                <span class="n">blob_start</span> <span class="o">=</span> <span class="n">index</span>
+                <span class="n">blob_end</span> <span class="o">=</span> <span class="n">index</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">blob_end</span> <span class="o">=</span> <span class="n">index</span>
+
+        <span class="k">return</span> <span class="n">counts</span>
+</div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="AnalyticsManager.nucleotides_kmers_annotations_counts_probabilities"><a class="viewcode-back" href="../../index.html#core.analyticsmanager.AnalyticsManager.nucleotides_kmers_annotations_counts_probabilities">[docs]</a>    <span class="k">def</span> <span class="nf">nucleotides_kmers_annotations_counts_probabilities</span><span class="p">(</span><span class="n">sequences</span><span class="p">,</span> <span class="n">kmer_size</span><span class="p">,</span> <span class="n">annotations_size</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">dump</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that counts the occurrences of nucleotides, kmers and annotations of given size and calculates their probabilities.</span>
+
+<span class="sd">        :param sequences: List of sequences.</span>
+<span class="sd">        :param kmer_size: Size of kmers.</span>
+<span class="sd">        :param annotations_size: Number of annotations in emissions.</span>
+<span class="sd">        :param file_name: Name of the output file.</span>
+<span class="sd">        :param dump: Logical switch for writing results to file.</span>
+<span class="sd">        :returns: Dictionary of counts and probabilities of nucleotides, kmers and annotations.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">statistics</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;counts&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;nucleotides&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s">&quot;kmers&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s">&quot;annotations&quot;</span><span class="p">:</span> <span class="p">{}},</span> <span class="s">&quot;probabilities&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s">&quot;nucleotides&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s">&quot;kmers&quot;</span><span class="p">:</span> <span class="p">{},</span> <span class="s">&quot;annotations&quot;</span><span class="p">:</span> <span class="p">{}}}</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">annotations_size</span><span class="p">):</span>
+            <span class="n">statistics</span><span class="p">[</span><span class="s">&quot;counts&quot;</span><span class="p">][</span><span class="s">&quot;annotations&quot;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">statistics</span><span class="p">[</span><span class="s">&quot;probabilities&quot;</span><span class="p">][</span><span class="s">&quot;annotations&quot;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">nucleotides_length</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="n">kmers_length</span> <span class="o">=</span> <span class="mi">0</span>
+
+        <span class="k">for</span> <span class="n">sequence</span> <span class="ow">in</span> <span class="n">sequences</span><span class="p">:</span>
+
+            <span class="n">nucleotides</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">Counter</span><span class="p">([</span><span class="n">j</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+            <span class="n">nucleotides_length</span> <span class="o">+=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">nucleotides</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">statistics</span><span class="p">[</span><span class="s">&quot;counts&quot;</span><span class="p">][</span><span class="s">&quot;nucleotides&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">statistics</span><span class="p">[</span><span class="s">&quot;counts&quot;</span><span class="p">][</span><span class="s">&quot;nucleotides&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">+=</span> <span class="n">nucleotides</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">statistics</span><span class="p">[</span><span class="s">&quot;counts&quot;</span><span class="p">][</span><span class="s">&quot;nucleotides&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">nucleotides</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">annotations_size</span><span class="p">):</span>
+                <span class="n">annotations</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">Counter</span><span class="p">([</span><span class="n">j</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">annotations</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">statistics</span><span class="p">[</span><span class="s">&quot;counts&quot;</span><span class="p">][</span><span class="s">&quot;annotations&quot;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                        <span class="n">statistics</span><span class="p">[</span><span class="s">&quot;counts&quot;</span><span class="p">][</span><span class="s">&quot;annotations&quot;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)][</span><span class="n">key</span><span class="p">]</span> <span class="o">+=</span> <span class="n">annotations</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="n">statistics</span><span class="p">[</span><span class="s">&quot;counts&quot;</span><span class="p">][</span><span class="s">&quot;annotations&quot;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">annotations</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+            <span class="n">kmers</span> <span class="o">=</span> <span class="n">cs</span><span class="o">.</span><span class="n">Counter</span><span class="p">([</span><span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">j</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="n">kmer_size</span><span class="p">]])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">kmer_size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)])</span>
+            <span class="n">kmers_length</span> <span class="o">+=</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">-</span> <span class="n">kmer_size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">kmers</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">statistics</span><span class="p">[</span><span class="s">&quot;counts&quot;</span><span class="p">][</span><span class="s">&quot;kmers&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">statistics</span><span class="p">[</span><span class="s">&quot;counts&quot;</span><span class="p">][</span><span class="s">&quot;kmers&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">+=</span> <span class="n">kmers</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">statistics</span><span class="p">[</span><span class="s">&quot;counts&quot;</span><span class="p">][</span><span class="s">&quot;kmers&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">kmers</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">statistics</span><span class="p">[</span><span class="s">&quot;counts&quot;</span><span class="p">][</span><span class="s">&quot;nucleotides&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">statistics</span><span class="p">[</span><span class="s">&quot;probabilities&quot;</span><span class="p">][</span><span class="s">&quot;nucleotides&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">statistics</span><span class="p">[</span><span class="s">&quot;counts&quot;</span><span class="p">][</span><span class="s">&quot;nucleotides&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">])</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">nucleotides_length</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">statistics</span><span class="p">[</span><span class="s">&quot;counts&quot;</span><span class="p">][</span><span class="s">&quot;kmers&quot;</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">statistics</span><span class="p">[</span><span class="s">&quot;probabilities&quot;</span><span class="p">][</span><span class="s">&quot;kmers&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">statistics</span><span class="p">[</span><span class="s">&quot;counts&quot;</span><span class="p">][</span><span class="s">&quot;kmers&quot;</span><span class="p">][</span><span class="n">key</span><span class="p">])</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">kmers_length</span><span class="p">)</span>
+
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">annotations_size</span><span class="p">):</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">statistics</span><span class="p">[</span><span class="s">&quot;counts&quot;</span><span class="p">][</span><span class="s">&quot;annotations&quot;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">statistics</span><span class="p">[</span><span class="s">&quot;probabilities&quot;</span><span class="p">][</span><span class="s">&quot;annotations&quot;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)][</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">statistics</span><span class="p">[</span><span class="s">&quot;counts&quot;</span><span class="p">][</span><span class="s">&quot;annotations&quot;</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)][</span><span class="n">key</span><span class="p">])</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">nucleotides_length</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">dump</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">&quot;nucleotides_and_kmers_counts_&quot;</span> <span class="o">+</span> <span class="n">file_name</span> <span class="o">+</span> <span class="s">&quot;_&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">kmer_size</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;.pkl&#39;</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">statistics</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">statistics</span>
+</div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="AnalyticsManager.check_for_emissions"><a class="viewcode-back" href="../../index.html#core.analyticsmanager.AnalyticsManager.check_for_emissions">[docs]</a>    <span class="k">def</span> <span class="nf">check_for_emissions</span><span class="p">(</span><span class="n">emissions_alphabet_train</span><span class="p">,</span> <span class="n">emissions_alphabet_test</span><span class="p">,</span> <span class="n">extracted_variables</span><span class="p">,</span> <span class="n">final_generated_test_sequences</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that changes emissions that are only in test data to the generic emission or emission next to it.</span>
+
+<span class="sd">        :param emissions_alphabet_train: List of emissions in training data.</span>
+<span class="sd">        :param emissions_alphabet_test: List of emissions in test data.</span>
+<span class="sd">        :param extracted_variables: Variables extracted for sequence and HMM building.</span>
+<span class="sd">        :param final_generated_test_sequences: List of test sequences to correct.</span>
+<span class="sd">        :returns: List of corrected test sequences.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">emissions_only_in_test</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">emissions_alphabet_test</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">emissions_alphabet_train</span><span class="p">))</span>
+
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">emissions_only_in_test</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">extracted_variables</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+
+                <span class="k">for</span> <span class="n">emission</span> <span class="ow">in</span> <span class="n">emissions_only_in_test</span><span class="p">:</span>
+
+                    <span class="n">new_emission</span> <span class="o">=</span> <span class="s">&quot;X&quot;</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">extracted_variables</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="o">+</span> <span class="n">emission</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">extracted_variables</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">]):</span> <span class="nb">len</span><span class="p">(</span><span class="n">emission</span><span class="p">)]</span>
+
+                    <span class="k">if</span> <span class="n">new_emission</span> <span class="ow">in</span> <span class="n">emissions_alphabet_train</span><span class="p">:</span>
+
+                        <span class="k">for</span> <span class="n">sequence</span> <span class="ow">in</span> <span class="n">final_generated_test_sequences</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">emission</span> <span class="ow">in</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">])):</span>
+                                    <span class="k">if</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">emission</span><span class="p">:</span>
+                                        <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_emission</span>
+                    <span class="k">else</span><span class="p">:</span>
+
+                        <span class="k">for</span> <span class="n">sequence</span> <span class="ow">in</span> <span class="n">final_generated_test_sequences</span><span class="p">:</span>
+                            <span class="k">if</span> <span class="n">emission</span> <span class="ow">in</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">])):</span>
+                                    <span class="k">if</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">emission</span><span class="p">:</span>
+                                        <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                                            <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                                        <span class="k">else</span><span class="p">:</span>
+                                            <span class="n">i_index</span> <span class="o">=</span> <span class="mi">1</span>
+                                            <span class="k">while</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span> <span class="o">+</span> <span class="n">i_index</span><span class="p">]</span> <span class="o">==</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]:</span>
+                                                <span class="n">i_index</span> <span class="o">+=</span> <span class="mi">1</span>
+                                            <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span> <span class="o">+</span> <span class="n">i_index</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">for</span> <span class="n">emission</span> <span class="ow">in</span> <span class="n">emissions_only_in_test</span><span class="p">:</span>
+
+                    <span class="k">for</span> <span class="n">sequence</span> <span class="ow">in</span> <span class="n">final_generated_test_sequences</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">emission</span> <span class="ow">in</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">])):</span>
+                                <span class="k">if</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="n">emission</span><span class="p">:</span>
+                                    <span class="k">if</span> <span class="n">i</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                                        <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                                    <span class="k">else</span><span class="p">:</span>
+                                        <span class="n">i_index</span> <span class="o">=</span> <span class="mi">1</span>
+                                        <span class="k">while</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span> <span class="o">+</span> <span class="n">i_index</span><span class="p">]</span> <span class="o">==</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]:</span>
+                                            <span class="n">i_index</span> <span class="o">+=</span> <span class="mi">1</span>
+                                        <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span> <span class="o">+</span> <span class="n">i_index</span><span class="p">]</span>
+
+        <span class="k">return</span> <span class="n">final_generated_test_sequences</span>
+</div>
+<div class="viewcode-block" id="AnalyticsManager.visualize_probability_of_prediction"><a class="viewcode-back" href="../../index.html#core.analyticsmanager.AnalyticsManager.visualize_probability_of_prediction">[docs]</a>    <span class="k">def</span> <span class="nf">visualize_probability_of_prediction</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_manager</span><span class="p">,</span> <span class="n">sequences</span><span class="p">,</span> <span class="n">hmm</span><span class="p">,</span> <span class="n">experiment</span><span class="p">,</span> <span class="n">file_name</span><span class="p">,</span> <span class="n">state_name</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that visualizes list of points(probability of crosslink, iclip intensity) for given list of sequences.</span>
+
+<span class="sd">        :param file_manager: Given file manager object.</span>
+<span class="sd">        :param sequences: Given list of sequences.</span>
+<span class="sd">        :param hmm: Given HMM.</span>
+<span class="sd">        :param experiment: Given ID of single experiment.</span>
+<span class="sd">        :param file_name: Given name of output file.</span>
+<span class="sd">        :param state_name: Given name of state.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">points</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="n">sequences</span><span class="p">:</span>
+            <span class="n">p</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">probability_of_prediction</span><span class="p">(</span><span class="n">s</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">s</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">file_manager</span><span class="p">,</span> <span class="n">experiment</span><span class="p">,</span> <span class="n">hmm</span><span class="o">.</span><span class="n">get_state_by_name</span><span class="p">(</span><span class="n">state_name</span><span class="p">)[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">points</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+
+        <span class="n">points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">points</span><span class="p">)</span>
+
+        <span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">/=</span> <span class="nb">max</span><span class="p">(</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span>
+        <span class="n">points</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">/=</span> <span class="nb">max</span><span class="p">(</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">slope</span><span class="p">,</span> <span class="n">intercept</span><span class="p">,</span> <span class="n">r_value</span><span class="p">,</span> <span class="n">p_value</span><span class="p">,</span> <span class="n">std_err</span> <span class="o">=</span> <span class="n">sps</span><span class="o">.</span><span class="n">linregress</span><span class="p">(</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">points</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">])</span>
+
+        <span class="n">plt</span><span class="o">.</span><span class="n">figure</span><span class="p">()</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">grid</span><span class="p">()</span>
+        <span class="n">line</span> <span class="o">=</span> <span class="n">slope</span> <span class="o">*</span> <span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">intercept</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">line</span><span class="p">,</span> <span class="s">&#39;r-&#39;</span><span class="p">,</span> <span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">points</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="s">&#39;.&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlim</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.05</span><span class="p">])</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylim</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.05</span><span class="p">])</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">xlabel</span><span class="p">(</span><span class="s">&#39;Probabilities&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">ylabel</span><span class="p">(</span><span class="s">&#39;Intensities&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">title</span><span class="p">(</span><span class="s">&#39;Probability of prediction versus intensity&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="s">&quot;probability_of_prediction_&quot;</span> <span class="o">+</span> <span class="n">file_name</span> <span class="o">+</span> <span class="s">&#39;.pdf&#39;</span><span class="p">,</span> <span class="n">bbox_inches</span><span class="o">=</span><span class="s">&#39;tight&#39;</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+</div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="AnalyticsManager.probability_of_prediction"><a class="viewcode-back" href="../../index.html#core.analyticsmanager.AnalyticsManager.probability_of_prediction">[docs]</a>    <span class="k">def</span> <span class="nf">probability_of_prediction</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="n">y_score</span><span class="p">,</span> <span class="n">file_manager</span><span class="p">,</span> <span class="n">experiment</span><span class="p">,</span> <span class="n">state_index</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that makes list of points(probability of crosslink, iclip intensity) for given sequence.</span>
+
+<span class="sd">        :param sequence: Given sequence.</span>
+<span class="sd">        :param y_score: Matrix of probabilities.</span>
+<span class="sd">        :param file_manager: Given file manager object.</span>
+<span class="sd">        :param experiment: Given ID of single experiment.</span>
+<span class="sd">        :param state_index: Given ID of wanted state inside the matrix of probabilities.</span>
+<span class="sd">        :returns: List of points(probability of crosslink, iclip intensity).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">gene</span> <span class="o">=</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">iclip</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_manager</span><span class="o">.</span><span class="n">iclip_files_path</span> <span class="o">+</span> <span class="n">gene</span><span class="p">[</span><span class="s">&#39;files&#39;</span><span class="p">][</span><span class="s">&#39;iclip&#39;</span><span class="p">]))</span>
+        <span class="n">gene_iclip_raw</span> <span class="o">=</span> <span class="n">iclip</span><span class="p">[</span><span class="n">gene</span><span class="p">[</span><span class="s">&#39;gene_location&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span> <span class="n">gene</span><span class="p">[</span><span class="s">&#39;gene_location&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]]</span>
+        <span class="n">gene_iclip</span> <span class="o">=</span> <span class="n">iclip</span><span class="p">[</span><span class="n">gene</span><span class="p">[</span><span class="s">&#39;gene_location&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span> <span class="n">gene</span><span class="p">[</span><span class="s">&#39;gene_location&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span>
+
+        <span class="n">points</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gene_iclip</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+            <span class="k">if</span> <span class="n">gene_iclip</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">experiment</span><span class="p">)</span> <span class="ow">and</span> <span class="n">gene_iclip</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">y_score</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="n">points</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">y_score</span><span class="p">[</span><span class="n">state_index</span><span class="p">][</span><span class="n">gene_iclip</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]],</span> <span class="n">gene_iclip_raw</span><span class="p">[</span><span class="n">gene_iclip</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="n">gene_iclip</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]],</span> <span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">points</span>
+</div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="AnalyticsManager.visualize_sequence"><a class="viewcode-back" href="../../index.html#core.analyticsmanager.AnalyticsManager.visualize_sequence">[docs]</a>    <span class="k">def</span> <span class="nf">visualize_sequence</span><span class="p">(</span><span class="n">sequence</span><span class="p">,</span> <span class="n">file_manager</span><span class="p">,</span> <span class="n">hmm</span><span class="p">,</span> <span class="n">iclip_experiment</span><span class="p">,</span> <span class="n">visualization_type</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that visualizes single or ali iclip experiment values and annotations for single sequence.</span>
+
+<span class="sd">        :param sequence: Given sequence.</span>
+<span class="sd">        :param file_manager: Given file manager object.</span>
+<span class="sd">        :param hmm: Given HMM.</span>
+<span class="sd">        :param iclip_experiment: Given ID of single experiment.</span>
+<span class="sd">        :param visualization_type: String that decides the visualization of single or all iclip experiments values.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">if</span> <span class="n">visualization_type</span> <span class="o">==</span> <span class="s">&quot;single&quot;</span><span class="p">:</span>
+
+            <span class="n">gene</span> <span class="o">=</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">2</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+
+            <span class="n">predicted_sequence</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">hmm</span><span class="o">.</span><span class="n">posterior_decoding_scaled</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">predicted_sequence</span> <span class="o">=</span> <span class="n">predicted_sequence</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+            <span class="n">iclip</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_manager</span><span class="o">.</span><span class="n">iclip_files_path</span> <span class="o">+</span> <span class="n">gene</span><span class="p">[</span><span class="s">&#39;files&#39;</span><span class="p">][</span><span class="s">&#39;iclip&#39;</span><span class="p">]))</span>
+            <span class="n">gene_iclip</span> <span class="o">=</span> <span class="n">iclip</span><span class="p">[</span><span class="n">gene</span><span class="p">[</span><span class="s">&#39;gene_location&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span> <span class="n">gene</span><span class="p">[</span><span class="s">&#39;gene_location&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]][:,</span> <span class="n">iclip_experiment</span><span class="p">]</span>
+
+            <span class="n">annotations</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_manager</span><span class="o">.</span><span class="n">annot_files_path</span> <span class="o">+</span> <span class="n">gene</span><span class="p">[</span><span class="s">&#39;files&#39;</span><span class="p">][</span><span class="s">&#39;annot&#39;</span><span class="p">]))</span>
+            <span class="n">gene_annotations</span> <span class="o">=</span> <span class="n">annotations</span><span class="p">[</span><span class="n">gene</span><span class="p">[</span><span class="s">&#39;gene_location&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span> <span class="n">gene</span><span class="p">[</span><span class="s">&#39;gene_location&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)</span>
+
+            <span class="n">length</span> <span class="o">=</span> <span class="n">predicted_sequence</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">gene_iclip</span> <span class="o">=</span> <span class="n">gene_iclip</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">length</span><span class="p">]</span>
+            <span class="n">predicted_sequence</span> <span class="o">=</span> <span class="n">predicted_sequence</span>
+            <span class="n">gene_annotations</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">rot90</span><span class="p">(</span><span class="n">gene_annotations</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="n">length</span><span class="p">,</span> <span class="p">:])</span>
+
+            <span class="n">f</span><span class="p">,</span> <span class="n">axarr</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="mi">7</span><span class="p">,</span> <span class="n">sharex</span><span class="o">=</span><span class="bp">True</span><span class="p">)</span>
+            <span class="n">f</span><span class="o">.</span><span class="n">suptitle</span><span class="p">(</span><span class="s">&#39;Intensities and annotations for a single sequence and single iCLIP experiment&#39;</span><span class="p">)</span>
+
+            <span class="n">axarr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">length</span><span class="p">),</span> <span class="n">gene_iclip</span><span class="p">)</span>
+            <span class="n">axarr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">gene_iclip</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.05</span><span class="p">])</span>
+            <span class="n">axarr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">length</span> <span class="o">+</span> <span class="mf">0.05</span><span class="p">])</span>
+            <span class="n">axarr</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s">&quot;iCLIP&quot;</span><span class="p">)</span>
+
+            <span class="n">axarr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">length</span><span class="p">),</span> <span class="n">predicted_sequence</span><span class="p">)</span>
+            <span class="n">axarr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="nb">max</span><span class="p">(</span><span class="n">predicted_sequence</span><span class="p">)</span> <span class="o">+</span> <span class="mf">0.05</span><span class="p">])</span>
+            <span class="n">axarr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">length</span> <span class="o">+</span> <span class="mf">0.05</span><span class="p">])</span>
+            <span class="n">axarr</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s">&quot;Prediction&quot;</span><span class="p">)</span>
+
+            <span class="n">annotations</span> <span class="o">=</span> <span class="p">[</span><span class="s">&quot;Exon&quot;</span><span class="p">,</span> <span class="s">&quot;Intron&quot;</span><span class="p">,</span> <span class="s">&quot;5UTR&quot;</span><span class="p">,</span> <span class="s">&quot;CDS&quot;</span><span class="p">,</span> <span class="s">&quot;3UTR&quot;</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">7</span><span class="p">):</span>
+                <span class="n">axarr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">length</span><span class="p">),</span> <span class="n">gene_annotations</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="p">:])</span>
+                <span class="n">axarr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylim</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.05</span><span class="p">])</span>
+                <span class="n">axarr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_xlim</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">length</span> <span class="o">+</span> <span class="mf">0.05</span><span class="p">])</span>
+                <span class="n">axarr</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="n">annotations</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">2</span><span class="p">])</span>
+
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">iCLIPHMMProject 0.1.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Aleks Huc.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>

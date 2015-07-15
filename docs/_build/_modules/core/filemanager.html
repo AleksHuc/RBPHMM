@@ -1,0 +1,338 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Transitional//EN"
+  "http://www.w3.org/TR/xhtml1/DTD/xhtml1-transitional.dtd">
+
+
+<html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    
+    <title>core.filemanager &mdash; iCLIPHMMProject 0.1.1 documentation</title>
+    
+    <link rel="stylesheet" href="../../_static/default.css" type="text/css" />
+    <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+    
+    <script type="text/javascript">
+      var DOCUMENTATION_OPTIONS = {
+        URL_ROOT:    '../../',
+        VERSION:     '0.1.1',
+        COLLAPSE_INDEX: false,
+        FILE_SUFFIX: '.html',
+        HAS_SOURCE:  true
+      };
+    </script>
+    <script type="text/javascript" src="../../_static/jquery.js"></script>
+    <script type="text/javascript" src="../../_static/underscore.js"></script>
+    <script type="text/javascript" src="../../_static/doctools.js"></script>
+    <link rel="top" title="iCLIPHMMProject 0.1.1 documentation" href="../../index.html" />
+    <link rel="up" title="Module code" href="../index.html" /> 
+  </head>
+  <body>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">iCLIPHMMProject 0.1.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" accesskey="U">Module code</a> &raquo;</li> 
+      </ul>
+    </div>  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body">
+            
+  <h1>Source code for core.filemanager</h1><div class="highlight"><pre>
+<span class="kn">import</span> <span class="nn">pickle</span>
+<span class="kn">import</span> <span class="nn">gzip</span>
+<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">re</span>
+<span class="kn">import</span> <span class="nn">numpy</span>
+
+
+<div class="viewcode-block" id="FileManager"><a class="viewcode-back" href="../../index.html#core.filemanager.FileManager">[docs]</a><span class="k">class</span> <span class="nc">FileManager</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Class that represent file manager.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="k">def</span> <span class="nf">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">annot_files_path</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">genes_files_path</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iclip_files_path</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rnafold_files_path</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">positions_files_path</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">gene_file</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">string_file</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">iclip_info_file</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">ignored_keys_list</span> <span class="o">=</span> <span class="s">&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">files</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">rev_code</span> <span class="o">=</span> <span class="p">{</span><span class="s">&#39;A&#39;</span><span class="p">:</span> <span class="s">&#39;T&#39;</span><span class="p">,</span> <span class="s">&#39;T&#39;</span><span class="p">:</span> <span class="s">&#39;A&#39;</span><span class="p">,</span> <span class="s">&#39;U&#39;</span><span class="p">:</span> <span class="s">&#39;A&#39;</span><span class="p">,</span> <span class="s">&#39;G&#39;</span><span class="p">:</span> <span class="s">&#39;C&#39;</span><span class="p">,</span> <span class="s">&#39;C&#39;</span><span class="p">:</span> <span class="s">&#39;G&#39;</span><span class="p">,</span> <span class="s">&#39;N&#39;</span><span class="p">:</span> <span class="s">&#39;N&#39;</span><span class="p">}</span>
+
+<div class="viewcode-block" id="FileManager.read_file_headers"><a class="viewcode-back" href="../../index.html#core.filemanager.FileManager.read_file_headers">[docs]</a>    <span class="k">def</span> <span class="nf">read_file_headers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that makes header file that aggregates all given data files for easier data access.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">annot_files_path</span><span class="p">,</span> <span class="s">&quot;annot&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">genes_files_path</span><span class="p">,</span> <span class="s">&quot;genes&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">iclip_files_path</span><span class="p">,</span> <span class="s">&quot;iclip&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">rnafold_files_path</span><span class="p">,</span> <span class="s">&quot;rnafold&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">read_files</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">positions_files_path</span><span class="p">,</span> <span class="s">&quot;positions&quot;</span><span class="p">)</span>
+
+        <span class="n">keys</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ignored_keys_list</span><span class="p">:</span>
+            <span class="n">keys</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">i</span><span class="p">)</span>
+
+        <span class="n">genes_info</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">gene_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">l</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="n">genes_info</span><span class="p">[(</span><span class="n">l</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">l</span><span class="p">[</span><span class="mi">2</span><span class="p">])]</span> <span class="o">=</span> <span class="n">l</span>
+
+        <span class="n">genes_final</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">keys</span><span class="p">:</span>
+
+            <span class="n">positions</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">positions_files_path</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s">&quot;positions&quot;</span><span class="p">]))</span>
+            <span class="n">genes</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">genes_files_path</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="s">&quot;genes&quot;</span><span class="p">]))</span>
+            <span class="n">genes</span> <span class="o">=</span> <span class="n">genes</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span>
+
+            <span class="c">#print key, genes, genes[0].shape[0], positions[1:20]</span>
+
+            <span class="n">genes_locations</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">genes</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+                <span class="k">if</span> <span class="n">genes</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="ow">in</span> <span class="n">genes_locations</span><span class="p">:</span>
+                    <span class="n">current</span> <span class="o">=</span> <span class="n">genes_locations</span><span class="p">[</span><span class="n">genes</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]]</span>
+                    <span class="n">genes_locations</span><span class="p">[</span><span class="n">genes</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span><span class="n">current</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">genes</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">])</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">genes_locations</span><span class="p">[</span><span class="n">genes</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span><span class="n">genes</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">],</span> <span class="mi">0</span><span class="p">)</span>
+
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">genes_locations</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">current</span> <span class="o">=</span> <span class="n">genes_locations</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="n">gene_info</span> <span class="o">=</span> <span class="n">genes_info</span><span class="p">[(</span><span class="nb">str</span><span class="p">(</span><span class="n">positions</span><span class="p">[</span><span class="n">current</span><span class="p">[</span><span class="mi">0</span><span class="p">]][</span><span class="mi">2</span><span class="p">]),</span> <span class="nb">str</span><span class="p">(</span><span class="n">positions</span><span class="p">[</span><span class="n">current</span><span class="p">[</span><span class="mi">1</span><span class="p">]][</span><span class="mi">2</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))]</span>
+                <span class="n">gene</span> <span class="o">=</span> <span class="p">{</span><span class="s">&quot;gene_info&quot;</span><span class="p">:</span> <span class="n">gene_info</span><span class="p">,</span> <span class="s">&quot;gene_location&quot;</span><span class="p">:</span> <span class="n">current</span><span class="p">,</span> <span class="s">&quot;gene_position&quot;</span><span class="p">:</span> <span class="p">(</span><span class="n">positions</span><span class="p">[</span><span class="n">current</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span> <span class="n">positions</span><span class="p">[</span><span class="n">current</span><span class="p">[</span><span class="mi">1</span><span class="p">]]),</span> <span class="s">&quot;files&quot;</span><span class="p">:</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">[</span><span class="n">key</span><span class="p">],</span> <span class="s">&quot;key&quot;</span><span class="p">:</span> <span class="n">key</span><span class="p">}</span>
+                <span class="n">genes_final</span><span class="p">[(</span><span class="n">gene_info</span><span class="p">[</span><span class="mi">4</span><span class="p">],</span> <span class="n">gene_info</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">gene_info</span><span class="p">[</span><span class="mi">2</span><span class="p">])]</span> <span class="o">=</span> <span class="n">gene</span>
+
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">&#39;header_file.pkl&#39;</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">genes_final</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span>
+</div>
+<div class="viewcode-block" id="FileManager.read_files"><a class="viewcode-back" href="../../index.html#core.filemanager.FileManager.read_files">[docs]</a>    <span class="k">def</span> <span class="nf">read_files</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">files_path</span><span class="p">,</span> <span class="n">files_starting_with</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that stores file names to class dictionary for given directory and starting characters.</span>
+
+<span class="sd">        :param files_path: String that represents the logical path to directory of files.</span>
+<span class="sd">        :param files_starting_with: String that represents common starting characters of requested files.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">for</span> <span class="n">file_name</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">files_path</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">file_name</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="n">files_starting_with</span><span class="p">):</span>
+                <span class="n">string_pattern</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="s">&#39;_[0-9]{1,3}&#39;</span><span class="p">)</span>
+                <span class="n">list_of_strings</span> <span class="o">=</span> <span class="n">string_pattern</span><span class="o">.</span><span class="n">findall</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">list_of_strings</span><span class="p">[</span><span class="nb">len</span><span class="p">(</span><span class="n">list_of_strings</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]</span>
+                <span class="n">key</span> <span class="o">=</span> <span class="n">key</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">key</span><span class="p">)]</span>
+                <span class="k">if</span> <span class="n">key</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">files_starting_with</span><span class="p">]</span> <span class="o">=</span> <span class="n">file_name</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">files</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">files_starting_with</span><span class="p">]</span> <span class="o">=</span> <span class="n">file_name</span>
+</div>
+<div class="viewcode-block" id="FileManager.read_dna_string_from_to"><a class="viewcode-back" href="../../index.html#core.filemanager.FileManager.read_dna_string_from_to">[docs]</a>    <span class="k">def</span> <span class="nf">read_dna_string_from_to</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">start_location</span><span class="p">,</span> <span class="n">stop_location</span><span class="p">,</span> <span class="n">string_direction</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that returns the chosen substring of the whole nucleotide string.</span>
+
+<span class="sd">        - A - Adenine</span>
+<span class="sd">        - C - Cytosine</span>
+<span class="sd">        - G - Guanine</span>
+<span class="sd">        - T - Thymine</span>
+<span class="sd">        - N - Any of the nucleotides.</span>
+
+<span class="sd">        :param start_location: Index that represents the start of substring.</span>
+<span class="sd">        :param stop_location: Index that represents the end of substring.</span>
+<span class="sd">        :param string_direction: String (&#39;+&#39; or &#39;-&#39;) that sets the direction in which the nucleotides are read.</span>
+<span class="sd">        :returns: The chosen substring of the whole nucleotide string.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">string_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">string_file</span><span class="p">)</span>
+        <span class="n">dna_string</span> <span class="o">=</span> <span class="n">string_file</span><span class="o">.</span><span class="n">read</span><span class="p">()[</span><span class="n">start_location</span><span class="p">:</span> <span class="n">stop_location</span><span class="p">]</span>
+
+        <span class="k">if</span> <span class="n">string_direction</span> <span class="o">==</span> <span class="s">&quot;-&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">reverse_complement</span><span class="p">(</span><span class="n">dna_string</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">string_direction</span> <span class="o">==</span> <span class="s">&quot;+&quot;</span><span class="p">:</span>
+            <span class="k">return</span> <span class="n">dna_string</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">print</span> <span class="s">&quot;ERROR: String direction is wrong!&quot;</span>
+            <span class="k">return</span> <span class="s">&quot;&quot;</span>
+</div>
+<div class="viewcode-block" id="FileManager.reverse_complement"><a class="viewcode-back" href="../../index.html#core.filemanager.FileManager.reverse_complement">[docs]</a>    <span class="k">def</span> <span class="nf">reverse_complement</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">s</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that returns the reverse complement of a given DNA sequence.</span>
+
+<span class="sd">        :param s: Input DNA sequence.</span>
+<span class="sd">        :returns: Reverse complement in the correct orientation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="k">return</span> <span class="s">&quot;&quot;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">rev_code</span><span class="p">[</span><span class="n">n</span><span class="p">]</span> <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">s</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]])</span>
+</div>
+<div class="viewcode-block" id="FileManager.read_iclip_info"><a class="viewcode-back" href="../../index.html#core.filemanager.FileManager.read_iclip_info">[docs]</a>    <span class="k">def</span> <span class="nf">read_iclip_info</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that reads iclip header file and make dictionary.</span>
+
+<span class="sd">        :returns: Dictionary of read iclip header file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">iclip_info_file</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">f</span><span class="p">:</span>
+                <span class="n">substrings</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()</span>
+                <span class="n">data</span><span class="p">[</span><span class="n">substrings</span><span class="p">[</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span><span class="n">substrings</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">substrings</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+
+        <span class="k">return</span> <span class="n">data</span>
+</div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="FileManager.make_sequences"><a class="viewcode-back" href="../../index.html#core.filemanager.FileManager.make_sequences">[docs]</a>    <span class="k">def</span> <span class="nf">make_sequences</span><span class="p">(</span><span class="n">sequences</span><span class="p">,</span> <span class="n">kmer_size</span><span class="p">,</span> <span class="n">kmers</span><span class="p">,</span> <span class="n">annotations_list</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that generates specific sequences from a general ones.</span>
+
+<span class="sd">        :param sequences: Given general sequences.</span>
+<span class="sd">        :param kmer_size: Given size of kmers.</span>
+<span class="sd">        :param kmers: List of kmers to use in emissions.</span>
+<span class="sd">        :param annotations_list: List of annotations which to use in emissions.</span>
+<span class="sd">        :returns: New specific sequences and new state and emission alphabets.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">new_sequences</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">emissions_alphabet</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span>
+        <span class="n">state_alphabet</span> <span class="o">=</span> <span class="p">[]</span>
+
+        <span class="k">for</span> <span class="n">sequence</span> <span class="ow">in</span> <span class="n">sequences</span><span class="p">:</span>
+
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&gt;=</span> <span class="n">kmer_size</span><span class="p">:</span>
+
+                <span class="n">states</span> <span class="o">=</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="mi">0</span><span class="p">:</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="n">kmer_size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+                <span class="n">state_alphabet</span><span class="o">.</span><span class="n">extend</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">states</span><span class="p">)))</span>
+
+                <span class="n">emissions</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">sequence</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">-</span> <span class="n">kmer_size</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+
+                    <span class="n">emission</span> <span class="o">=</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="n">j</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">:</span> <span class="n">i</span> <span class="o">+</span> <span class="n">kmer_size</span><span class="p">]])</span>
+                    <span class="k">if</span> <span class="n">emission</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kmers</span><span class="p">:</span>
+                        <span class="n">emission</span> <span class="o">=</span> <span class="s">&quot;X&quot;</span> <span class="o">*</span> <span class="n">kmer_size</span>
+
+                    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">annotations_list</span><span class="p">:</span>
+                        <span class="n">emission</span> <span class="o">+=</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">][</span><span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+
+                    <span class="n">emissions</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">emission</span><span class="p">)</span>
+                    <span class="n">emissions_alphabet</span><span class="o">.</span><span class="n">add</span><span class="p">(</span><span class="n">emission</span><span class="p">)</span>
+
+                <span class="n">emissions</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">emissions</span><span class="p">)</span>
+                <span class="n">states</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">states</span><span class="p">)</span>
+
+                <span class="n">new_sequences</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="n">states</span><span class="p">,</span> <span class="n">emissions</span><span class="p">,</span> <span class="n">sequence</span><span class="p">[</span><span class="mi">2</span><span class="p">]])</span>
+
+        <span class="n">new_sequences</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">new_sequences</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">new_sequences</span><span class="p">,</span> <span class="nb">list</span><span class="p">(</span><span class="n">emissions_alphabet</span><span class="p">),</span> <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">state_alphabet</span><span class="p">))</span>
+</div>
+    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="FileManager.make_generic_sequences"><a class="viewcode-back" href="../../index.html#core.filemanager.FileManager.make_generic_sequences">[docs]</a>    <span class="k">def</span> <span class="nf">make_generic_sequences</span><span class="p">(</span><span class="n">file_manager</span><span class="p">,</span> <span class="n">order</span><span class="p">,</span> <span class="n">annotations_list</span><span class="p">,</span> <span class="n">header</span><span class="p">,</span> <span class="n">list_of_experiments</span><span class="p">):</span>
+        <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">        Method that generates generic sequences of iclip states and emissions from nucleotides and annotations.</span>
+
+<span class="sd">        :param file_manager: Given file manager class.</span>
+<span class="sd">        :param order: Given order of positive states.</span>
+<span class="sd">        :param annotations_list: Given list of annotation to include in sequences.</span>
+<span class="sd">        :param header: Given header object.</span>
+<span class="sd">        :param list_of_experiments: Given list of experiments for which to make sequences.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+
+        <span class="n">iclip_info</span> <span class="o">=</span> <span class="n">file_manager</span><span class="o">.</span><span class="n">read_iclip_info</span><span class="p">()</span>
+
+        <span class="k">for</span> <span class="n">experiment</span> <span class="ow">in</span> <span class="n">iclip_info</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">experiment</span> <span class="ow">in</span> <span class="n">list_of_experiments</span><span class="p">:</span>
+                <span class="n">sequences</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">header</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">object</span><span class="p">)</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+
+                <span class="k">print</span> <span class="s">&quot;Experiment: &quot;</span> <span class="o">+</span> <span class="n">experiment</span> <span class="o">+</span> <span class="s">&quot;: &quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">iclip_info</span><span class="p">[</span><span class="n">experiment</span><span class="p">])</span>
+                <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">header</span><span class="p">:</span>
+
+                    <span class="k">if</span> <span class="n">index</span> <span class="o">%</span> <span class="mi">100</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">print</span> <span class="n">index</span>
+
+                    <span class="n">gene</span> <span class="o">=</span> <span class="n">header</span><span class="p">[</span><span class="n">key</span><span class="p">]</span>
+                    <span class="n">iclip</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_manager</span><span class="o">.</span><span class="n">iclip_files_path</span> <span class="o">+</span> <span class="n">gene</span><span class="p">[</span><span class="s">&#39;files&#39;</span><span class="p">][</span><span class="s">&#39;iclip&#39;</span><span class="p">]))</span>
+                    <span class="n">gene_iclip</span> <span class="o">=</span> <span class="n">iclip</span><span class="p">[</span><span class="n">gene</span><span class="p">[</span><span class="s">&#39;gene_location&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span> <span class="n">gene</span><span class="p">[</span><span class="s">&#39;gene_location&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]]</span><span class="o">.</span><span class="n">nonzero</span><span class="p">()</span>
+
+                    <span class="n">emissions</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">file_manager</span><span class="o">.</span><span class="n">read_dna_string_from_to</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">gene</span><span class="p">[</span><span class="s">&#39;gene_info&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">gene</span><span class="p">[</span><span class="s">&#39;gene_info&#39;</span><span class="p">][</span><span class="mi">2</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">gene</span><span class="p">[</span><span class="s">&#39;gene_info&#39;</span><span class="p">][</span><span class="mi">3</span><span class="p">]))</span>
+
+                    <span class="n">annotations</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">gzip</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_manager</span><span class="o">.</span><span class="n">annot_files_path</span> <span class="o">+</span> <span class="n">gene</span><span class="p">[</span><span class="s">&#39;files&#39;</span><span class="p">][</span><span class="s">&#39;annot&#39;</span><span class="p">]))</span>
+                    <span class="n">gene_annotations</span> <span class="o">=</span> <span class="n">annotations</span><span class="p">[</span><span class="n">gene</span><span class="p">[</span><span class="s">&#39;gene_location&#39;</span><span class="p">][</span><span class="mi">0</span><span class="p">]:</span> <span class="n">gene</span><span class="p">[</span><span class="s">&#39;gene_location&#39;</span><span class="p">][</span><span class="mi">1</span><span class="p">]]</span>
+                    <span class="n">gene_annotations</span> <span class="o">=</span> <span class="n">gene_annotations</span><span class="p">[:,</span> <span class="n">annotations_list</span><span class="p">]</span>
+
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="n">gene_annotations</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                        <span class="n">emissions</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+=</span> <span class="s">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">gene_annotations</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">int</span><span class="p">)])</span>
+
+                    <span class="n">emissions</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">emissions</span><span class="p">)</span>
+
+                    <span class="n">states</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="s">&quot;0&quot;</span><span class="p">]</span> <span class="o">*</span> <span class="nb">len</span><span class="p">(</span><span class="n">emissions</span><span class="p">))</span>
+
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">gene_iclip</span><span class="p">[</span><span class="mi">0</span><span class="p">])):</span>
+                        <span class="k">if</span> <span class="n">gene_iclip</span><span class="p">[</span><span class="mi">1</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">==</span> <span class="nb">int</span><span class="p">(</span><span class="n">experiment</span><span class="p">):</span>
+                            <span class="n">states</span><span class="p">[</span><span class="n">gene_iclip</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]]</span> <span class="o">=</span> <span class="s">&quot;1&quot;</span>
+                            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">xrange</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">order</span><span class="p">):</span>
+                                <span class="k">if</span> <span class="p">(</span><span class="n">gene_iclip</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">j</span><span class="p">)</span> <span class="o">&lt;</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">states</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                                    <span class="n">states</span><span class="p">[</span><span class="n">gene_iclip</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;1&quot;</span>
+                                <span class="k">if</span> <span class="p">(</span><span class="n">gene_iclip</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">j</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                                    <span class="n">states</span><span class="p">[</span><span class="n">gene_iclip</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="s">&quot;1&quot;</span>
+
+                    <span class="n">sequences</span><span class="p">[</span><span class="n">index</span><span class="p">]</span> <span class="o">=</span> <span class="n">numpy</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">states</span><span class="p">,</span> <span class="n">emissions</span><span class="p">,</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">gene</span><span class="p">)])</span>
+
+                    <span class="n">index</span> <span class="o">+=</span> <span class="mi">1</span>
+
+                <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="s">&quot;make_generic_sequences_&quot;</span> <span class="o">+</span> <span class="n">experiment</span> <span class="o">+</span> <span class="s">&quot;_&quot;</span> <span class="o">+</span> <span class="n">iclip_info</span><span class="p">[</span><span class="n">experiment</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="s">&quot;_&quot;</span> <span class="o">+</span> <span class="n">iclip_info</span><span class="p">[</span><span class="n">experiment</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="s">&#39;_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">order</span><span class="p">)</span> <span class="o">+</span> <span class="s">&#39;.pkl&#39;</span><span class="p">,</span> <span class="s">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">f</span><span class="p">:</span>
+                    <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">sequences</span><span class="p">,</span> <span class="n">f</span><span class="p">)</span></div></div>
+</pre></div>
+
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar">
+        <div class="sphinxsidebarwrapper">
+<div id="searchbox" style="display: none">
+  <h3>Quick search</h3>
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" />
+      <input type="submit" value="Go" />
+      <input type="hidden" name="check_keywords" value="yes" />
+      <input type="hidden" name="area" value="default" />
+    </form>
+    <p class="searchtip" style="font-size: 90%">
+    Enter search terms or a module, class or function name.
+    </p>
+</div>
+<script type="text/javascript">$('#searchbox').show(0);</script>
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../../py-modindex.html" title="Python Module Index"
+             >modules</a> |</li>
+        <li><a href="../../index.html">iCLIPHMMProject 0.1.1 documentation</a> &raquo;</li>
+          <li><a href="../index.html" >Module code</a> &raquo;</li> 
+      </ul>
+    </div>
+    <div class="footer">
+        &copy; Copyright 2014, Aleks Huc.
+      Created using <a href="http://sphinx-doc.org/">Sphinx</a> 1.2.3.
+    </div>
+  </body>
+</html>
