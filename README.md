@@ -1,6 +1,8 @@
 iCLIP Hidden Markov Model
 
-You can access this repo with SSH or with HTTPS.
+Hidden Markov Model algorithm for predicting RNA-protein bonding locations in iCLIP data.
+
+Python 2.7.x
 
 Modules used:
 - Sphinx
